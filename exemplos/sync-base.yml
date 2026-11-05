@@ -27,15 +27,16 @@ jobs:
           fetch-depth: 0
       - name: Puxar a branch estavel do base
         run: |
-          git config user.name "sincronizacao-base"
-          git config user.email "sincronizacao-base@users.noreply.github.com"
+          # assina como o dono do repositório: o plano gratuito da Vercel só publica commits da própria conta
+          git config user.name "${{ github.repository_owner }}"
+          git config user.email "${{ github.repository_owner }}@users.noreply.github.com"
           git remote add base https://github.com/entrefolhaspaisagismo/app-financeiro-base.git
           git fetch base estavel
           if git merge-base --is-ancestor base/estavel HEAD; then
             echo "Já está atualizado."
             exit 0
           fi
-          if ! git merge --no-edit base/estavel; then
+          if ! git merge --no-ff --no-edit base/estavel; then
             git merge --abort || true
             echo "::error::Conflito com mudanças pessoais. Peça ao Claude para resolver o merge (veja CLAUDE.md)."
             exit 1
