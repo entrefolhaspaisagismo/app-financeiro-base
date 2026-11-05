@@ -4,6 +4,8 @@
 const S = require("./_seguranca");
 
 const curto = (v, max) => String(v || "").slice(0, max);
+// id de pessoa: "EU" (primeira) ou "P2" (segunda); só letras, números, _ e -
+const pessoaValida = (v) => (/^[A-Za-z0-9_-]{1,20}$/.test(String(v || "")) ? String(v) : "");
 
 module.exports = async function handler(req, res) {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -39,13 +41,22 @@ module.exports = async function handler(req, res) {
       if (!protegido && process.env.CODIGO_INICIAL && String(body.codigo || "") !== process.env.CODIGO_INICIAL) {
         return res.status(403).json({ erro: "código inicial incorreto" });
       }
-      if (protegido && !sessao && !(await S.usaConvite(body.codigo))) {
-        return res.status(403).json({ erro: "código inválido ou vencido" });
+      // de quem é este celular: primeiro cadastro = o que o app mandar; com convite = a pessoa do convite;
+      // já logado = a mesma pessoa da sessão
+      let pessoa = pessoaValida(body.pessoa) || "EU";
+      if (protegido && !sessao) {
+        const doConvite = await S.usaConvite(body.codigo);
+        if (!doConvite) return res.status(403).json({ erro: "código inválido ou vencido" });
+        pessoa = doConvite;
+      } else if (protegido && sessao && sessao.p) {
+        pessoa = sessao.p;
       }
-      return res.status(200).json({ desafio: await S.novoDesafio("registro"), usuarioId: S.b64u(require("crypto").randomBytes(16)) });
+      return res.status(200).json({ desafio: await S.novoDesafio("registro", pessoa), usuarioId: S.b64u(require("crypto").randomBytes(16)) });
     }
     if (acao === "registra") {
-      if (!(await S.usaDesafio(body.desafio, "registro"))) return res.status(400).json({ erro: "pedido vencido, tente de novo" });
+      const desafioReg = await S.usaDesafio(body.desafio, "registro");
+      if (!desafioReg) return res.status(400).json({ erro: "pedido vencido, tente de novo" });
+      const pessoaReg = pessoaValida(desafioReg.extra) || "EU";
       if (auth && auth.rpId && auth.rpId !== rpId) return res.status(400).json({ erro: "endereço diferente do cadastrado" });
       S.confereCliente(body.clientData, "webauthn.create", body.desafio, origem);
       S.confereAutenticador(body.authData, rpId);
@@ -60,12 +71,12 @@ module.exports = async function handler(req, res) {
         id,
         chave: S.b64u(Buffer.from(String(body.chave), "base64")),
         alg: body.alg,
-        pessoa: "EU",
+        pessoa: pessoaReg,
         aparelho: curto(body.aparelho, 40) || "Celular",
         criadoEm: new Date().toISOString().slice(0, 10),
       });
       await S.salvarAuth(novo);
-      return res.status(200).json({ ok: true, ...S.criaSessao(novo, id, "EU") });
+      return res.status(200).json({ ok: true, pessoa: pessoaReg, ...S.criaSessao(novo, id, pessoaReg) });
     }
 
     // ---- desbloquear ----
@@ -87,7 +98,7 @@ module.exports = async function handler(req, res) {
     // ---- daqui pra baixo, só quem já entrou ----
     if (!sessao) return res.status(401).json({ erro: "bloqueado" });
     if (acao === "convite") {
-      return res.status(200).json({ codigo: await S.novoConvite(), validoMin: 10 });
+      return res.status(200).json({ codigo: await S.novoConvite(pessoaValida(body.pessoa) || sessao.p || "EU"), validoMin: 10 });
     }
     if (acao === "remove") {
       auth.credenciais = auth.credenciais.filter((c) => c.id !== body.id);

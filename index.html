@@ -300,7 +300,11 @@ body.na-home .topbar-tit{visibility:hidden}
 #contaExtrato{margin-top:16px}
 .logo-banco{display:inline-flex;width:28px;height:28px;flex:none}
 .logo-banco img{width:100%;height:100%;display:block;border-radius:50%}
-.logo-ini{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;color:#fff;font:600 11px/1 var(--sans);letter-spacing:.02em}
+.logo-ini{position:relative;width:100%;height:100%;border-radius:50%;display:grid;place-items:center;color:#fff;font:800 11px/1 var(--sans);letter-spacing:-.01em;overflow:hidden}
+.logo-ini.m{font-size:8px}
+.logo-ini img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.painel-conta-topo .logo-ini{font-size:15px}.painel-conta-topo .logo-ini.m{font-size:11px}
+.bv-chip{display:inline-flex;align-items:center;gap:7px}.bv-chip .logo-banco{width:20px;height:20px}.bv-chip .logo-ini{font-size:8px}.bv-chip .logo-ini.m{font-size:6px}
 :root.noite .logo-banco img{box-shadow:0 0 0 1px rgba(255,255,255,.16)}
 .hero-chips.secundarios{margin-top:10px}
 .hero-chips.secundarios .hero-chip{font-size:12.5px;padding:5px 11px;background:transparent}
@@ -502,7 +506,7 @@ input.valor-grande:focus{outline:none}
 .cartao{position:relative;width:100%;aspect-ratio:1.586/1;
   color:#fff;padding:18px 20px;display:flex;flex-direction:column;justify-content:space-between;
   font-family:var(--sans)}
-.cartao.generico{background:linear-gradient(150deg,#3A5A47,#1E3A2C 60%,#12261C)}
+.cartao.generico{background:linear-gradient(150deg,var(--cc,#3A5A47),color-mix(in srgb,var(--cc,#3A5A47) 62%,#000) 62%,color-mix(in srgb,var(--cc,#3A5A47) 40%,#000))}
 
 .cartao-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .cartao-marca{min-width:0}
@@ -747,6 +751,7 @@ html.trancado .layout,html.trancado .nav-baixo{visibility:hidden}
 #boasVindas input[type=text]{width:100%}
 #bvContas{display:flex;flex-wrap:wrap;gap:8px}
 #boasVindas .bv-erro{color:var(--vermelho,#a3211a);font-size:13px;min-height:18px}
+#bvSegunda{margin-top:8px}
 #boasVindas .bv-passos{display:flex;gap:6px}
 #boasVindas .bv-passos i{flex:1;height:4px;border-radius:4px;background:var(--line)}
 #boasVindas .bv-passos i.on{background:var(--accent)}
@@ -805,6 +810,9 @@ aplicaVisual();
         <div id="bvContas" style="margin-top:8px"></div></div>
       <div style="margin-top:8px"><label for="bvOutra">Outra conta</label>
         <div style="display:flex;gap:8px;margin-top:6px"><input type="text" id="bvOutra" maxlength="30" placeholder="Nome da conta ou banco"><button type="button" class="btn-texto" id="bvAddOutra">Adicionar</button></div></div>
+      <div style="margin-top:8px"><label>Quem vai usar o app?</label>
+        <div class="chips" id="bvModo" style="margin-top:8px"><button type="button" class="chip" data-modo="1" aria-pressed="true">Só eu</button><button type="button" class="chip" data-modo="2" aria-pressed="false">Eu e mais uma pessoa</button></div></div>
+      <div id="bvSegunda" hidden><label for="bvNome2">Nome da outra pessoa</label><input type="text" id="bvNome2" maxlength="40" placeholder="ex.: nome da esposa"></div>
       <div class="bv-erro" id="bvErro" role="alert"></div>
       <button type="button" class="btn" id="bvContinuar">Continuar</button>
     </div>
@@ -812,8 +820,9 @@ aplicaVisual();
       <h1>Tudo pronto, <span id="bvOla"></span>!</h1>
       <p style="margin-top:8px">Os próximos passos, quando quiser:</p>
       <ol style="margin:6px 0 0;padding-left:20px;color:var(--fg-soft);line-height:1.7;font-size:14.5px">
-        <li><b>Configurações → Segurança:</b> ative o Face ID para trancar o app.</li>
-        <li><b>Cartões:</b> cadastre seus cartões de crédito com melhor dia de compra e vencimento.</li>
+        <li><b>Configurações → Face ID:</b> ative para trancar o app.</li>
+        <li id="bvLiCasal" hidden><b>Para a outra pessoa:</b> em Configurações → Face ID, toque em “Liberar outro celular” e passe o código a ela.</li>
+        <li><b>Cartões:</b> toque em “+ Novo cartão” e informe o melhor dia de compra e o vencimento.</li>
         <li><b>Contas fixas:</b> cadastre aluguel, internet e o que se repete todo mês.</li>
         <li><b>Configurações → Saldo das contas:</b> informe o saldo de hoje de cada conta.</li>
         <li>Toque no <b>+</b> para lançar seu primeiro gasto.</li>
@@ -986,6 +995,10 @@ aplicaVisual();
               <label for="dashFiltroCat">Filtrar por categoria</label>
               <select id="dashFiltroCat"></select>
             </div>
+            <div style="flex:1;min-width:140px" id="wrapDashPessoa" hidden>
+              <label for="dashFiltroPessoa">Filtrar por pessoa</label>
+              <select id="dashFiltroPessoa"></select>
+            </div>
           </div>
           <p class="sub" id="dashGraficoTotalSub">Total: R$ 0,00</p>
           <div id="dashGraficoCategorias"></div>
@@ -1147,6 +1160,10 @@ aplicaVisual();
               <label for="gFiltroCat">Filtrar por categoria</label>
               <select id="gFiltroCat"></select>
             </div>
+            <div style="flex:1;min-width:140px" id="wrapVarQuem" hidden>
+              <label for="gFiltroQuem">Filtrar por quem gastou</label>
+              <select id="gFiltroQuem"></select>
+            </div>
           </div>
           <p class="sub" id="gTotalSub">Total: R$ 0,00</p>
           <div id="gLista"></div>
@@ -1244,6 +1261,15 @@ aplicaVisual();
           <div class="card" id="cardCartoesCadastrados">
             <h2>Cartões cadastrados</h2>
             <p class="sub" id="cTotalSub">Total em faturas: R$ 0,00</p>
+            <button type="button" class="btn secundario" id="cartaoNovoBtn" style="margin:4px 0 10px" aria-expanded="false">+ Novo cartão</button>
+            <div id="cartaoNovoForm" class="form-grid" hidden style="margin-bottom:14px">
+              <div class="full"><label for="cnNome">Nome do cartão</label><input type="text" id="cnNome" maxlength="30" placeholder="ex.: Nubank, Itaú Visa"></div>
+              <div><label for="cnMelhor">Melhor dia de compra</label><input type="number" id="cnMelhor" min="1" max="31" placeholder="ex.: 3"></div>
+              <div><label for="cnVenc">Dia do vencimento</label><input type="number" id="cnVenc" min="1" max="31" placeholder="ex.: 10"></div>
+              <div class="full"><label for="cnLimite">Limite (R$, opcional)</label><input type="number" id="cnLimite" min="0" step="0.01" placeholder="ex.: 5000"></div>
+              <div class="full" id="cnTitularWrap" hidden><label>Titular</label><div class="chips" id="cnTitular"></div></div>
+              <div class="full"><button type="button" class="btn full" id="cnSalvar">Salvar cartão</button></div>
+            </div>
             <div id="cCartoesLista"></div>
           </div>
           <div class="card" id="cardComprasCartao" style="grid-column:1/-1">
@@ -1448,6 +1474,25 @@ aplicaVisual();
             <label class="troca" for="cfgOcultar"><span>Abrir o app com os valores escondidos</span><input type="checkbox" id="cfgOcultar"></label>
           </div>
         </div>
+        <div class="card" id="cfgPessoas">
+          <button type="button" class="invest-cab cfg-cab" id="cfgPessoasCab" data-recolhe="cfgPessoasCorpo" aria-expanded="false" aria-controls="cfgPessoasCorpo">
+            <span class="invest-topo"><h2 style="margin:0">Pessoas</h2>
+              <span class="cfg-atual"><span id="cfgPessoasAtual"></span> <span class="seta" aria-hidden="true">›</span></span></span>
+          </button>
+          <div id="cfgPessoasCorpo" hidden style="margin-top:10px">
+            <p class="sub">Use sozinho ou com mais uma pessoa (ex.: esposa). Os dados são compartilhados; cada lançamento guarda quem fez e cada um recebe os próprios avisos.</p>
+            <div class="form-grid">
+              <div class="full"><label for="cpNome1">Primeira pessoa</label><input type="text" id="cpNome1" maxlength="40"></div>
+              <div class="full"><label for="cpNome2">Segunda pessoa (opcional)</label><input type="text" id="cpNome2" maxlength="40" placeholder="Deixe vazio para usar sozinho"></div>
+              <div class="full"><button type="button" class="btn full" id="cpSalvar">Salvar</button></div>
+            </div>
+            <div id="cpQuem" hidden style="margin-top:14px">
+              <label>Este celular é de</label>
+              <div class="chips" id="cpQuemChips" style="margin-top:6px"></div>
+              <p class="pct" style="margin-top:6px">Normalmente o Face ID já define isso. Troque aqui se estiver errado.</p>
+            </div>
+          </div>
+        </div>
         <div class="card" id="cfgFace">
           <button type="button" class="invest-cab cfg-cab" id="cfgFaceIdCab" data-recolhe="cfgFaceIdCorpo" aria-expanded="false" aria-controls="cfgFaceIdCorpo">
             <span class="invest-topo"><h2 style="margin:0">Face ID</h2>
@@ -1464,7 +1509,7 @@ aplicaVisual();
       <section class="sec" id="s-historico">
         <div class="card">
           <h2>Todos os lançamentos do mês</h2>
-          <p class="sub">Entradas e saídas de vocês dois</p>
+          <p class="sub">Entradas e saídas do mês</p>
           <div id="hLista"></div>
         </div>
       </section>
@@ -1624,8 +1669,11 @@ const FORMAS_GASTO = ["PIX","Débito","Crédito","Dinheiro"];
 const CONTAS_PIX_DEBITO = [];
 const CONTAS_SALDO = [];
 let perfil = {nome:'', contas:[], concluido:false};
-const PESSOA_FIXA = "EU";   // app de uma pessoa só: o campo `quem` dos lançamentos é sempre "EU"
-const NOMES_PESSOA = { "EU": "" };
+// Quem usa ESTE celular: "EU" (primeira pessoa) ou "P2" (segunda, modo casal). Vem do Face ID (o celular se
+// cadastra como de uma pessoa) ou da escolha em Configurações → Pessoas, e fica guardada neste aparelho.
+let PESSOA_FIXA = lsGet('quem') || "EU";
+const NOMES_PESSOA = {};   // id da pessoa -> nome (preenchido por aplicaPerfil)
+const ehCasal = ()=> (perfil.pessoas||[]).length > 1;
 // conta principal = a primeira cadastrada: recebe os recebimentos sem conta marcada, as contas fixas e as faturas pagas
 function contaPrincipal(){ return CONTAS_PIX_DEBITO[0] || ''; }
 function iniciaisDe(nome){
@@ -1637,10 +1685,16 @@ function aplicaPerfil(p){
   const nomes = (perfil.contas||[]).map(c=>c.nome);
   CONTAS_PIX_DEBITO.length = 0; CONTAS_PIX_DEBITO.push(...nomes);
   CONTAS_SALDO.length = 0; CONTAS_SALDO.push(...nomes);
-  NOMES_PESSOA.EU = perfil.nome || '';
-  document.title = 'Controle Financeiro' + (perfil.nome ? ' — ' + perfil.nome : '');
-  const nm = document.getElementById('perfilNome'); if(nm) nm.textContent = perfil.nome || 'Meu perfil';
-  const av = iniciaisDe(perfil.nome);
+  const pessoas = (perfil.pessoas && perfil.pessoas.length) ? perfil.pessoas : [{id:'EU', nome: perfil.nome||''}];
+  perfil.pessoas = pessoas;
+  Object.keys(NOMES_PESSOA).forEach(k=> delete NOMES_PESSOA[k]);
+  pessoas.forEach(pp=> NOMES_PESSOA[pp.id] = pp.nome);
+  const guardada = lsGet('quem') || PESSOA_FIXA;
+  PESSOA_FIXA = NOMES_PESSOA[guardada] !== undefined ? guardada : pessoas[0].id;
+  const meuNome = NOMES_PESSOA[PESSOA_FIXA] || '';
+  document.title = 'Controle Financeiro' + (meuNome ? ' — ' + meuNome : '');
+  const nm = document.getElementById('perfilNome'); if(nm) nm.textContent = meuNome || 'Meu perfil';
+  const av = iniciaisDe(meuNome);
   ['perfilAv','avTopo'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent = av; });
   // escolhas que dependem da lista de contas
   const ok = n => nomes.includes(n);
@@ -1652,6 +1706,9 @@ function aplicaPerfil(p){
   if(!ok(qPara) || qPara===qDe) qPara = nomes.find(n=>n!==qDe) || nomes[0];
   if(typeof montaChipsConta==='function') montaChipsConta();
   if(typeof montaChipsContaReceb==='function') montaChipsContaReceb();
+  if(typeof montaFiltrosPessoa==='function') montaFiltrosPessoa();
+  if(typeof montaCfgPessoas==='function') montaCfgPessoas();
+  if(typeof montaCartaoNovoTitular==='function') montaCartaoNovoTitular();
 }
 const CORES_CONSOLIDADO = { fixo:'#2a78d6', variavel:'#eb6834', cartao:'#8a63d2' };
 const MESES_NOME = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -1943,6 +2000,73 @@ function preencheFiltroDashCat(){
 preencheFiltroDashCat();
 document.getElementById('dashFiltroCat').onchange = ()=>{ filtroDashCat = document.getElementById('dashFiltroCat').value; desenhaTudo(); };
 
+// filtros "por pessoa": só aparecem no modo casal
+function montaCfgPessoas(){
+  const n1 = document.getElementById('cpNome1'); if(!n1) return;
+  const pp = perfil.pessoas || [];
+  if(document.activeElement!==n1) n1.value = (pp[0]||{}).nome || '';
+  const n2 = document.getElementById('cpNome2'); if(document.activeElement!==n2) n2.value = (pp[1]||{}).nome || '';
+  document.getElementById('cfgPessoasAtual').textContent = pp.length>1 ? pp.map(x=>x.nome).join(' e ') : 'Só eu';
+  const q = document.getElementById('cpQuem'); q.hidden = pp.length<2;
+  document.getElementById('cpQuemChips').innerHTML = pp.map(x=>`<button type="button" class="chip" data-quem="${esc(x.id)}" aria-pressed="${x.id===PESSOA_FIXA}">${esc(x.nome)}</button>`).join('');
+  document.querySelectorAll('#cpQuemChips [data-quem]').forEach(b=> b.onclick = ()=>{ lsSet('quem', b.dataset.quem); location.reload(); });
+}
+document.getElementById('cpSalvar').onclick = async ()=>{
+  const nomes = [document.getElementById('cpNome1').value.trim(), document.getElementById('cpNome2').value.trim()].filter(Boolean);
+  if(!nomes.length){ toast('Digite o nome da primeira pessoa'); return; }
+  try{
+    const r = await chamaApi('/api/gastos?recurso=perfil', {method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({pessoas: nomes})});
+    if(!r.ok) throw await erroApi(r, 'falha ao salvar');
+    aplicaPerfil({...perfil, ...(await r.json())}); desenhaTudo(); toast('Salvo');
+  }catch(e){ toast('✕ ' + ((e && e.message) || 'Sem conexão')); }
+};
+let cnTitular = null;
+function montaCartaoNovoTitular(){
+  const w = document.getElementById('cnTitularWrap'); if(!w) return;
+  w.hidden = !ehCasal();
+  if(!ehCasal()){ cnTitular = null; return; }
+  if(cnTitular!==null && !(perfil.pessoas||[]).some(x=>x.id===cnTitular)) cnTitular = PESSOA_FIXA;
+  const lista = [{id:null, nome:'Os dois'}, ...(perfil.pessoas||[])];
+  document.getElementById('cnTitular').innerHTML = lista.map(x=>`<button type="button" class="chip" data-tit="${x.id===null?'':esc(x.id)}" aria-pressed="${x.id===cnTitular}">${esc(x.nome)}</button>`).join('');
+  document.querySelectorAll('#cnTitular [data-tit]').forEach(b=> b.onclick = ()=>{ cnTitular = b.dataset.tit || null; montaCartaoNovoTitular(); });
+}
+document.getElementById('cartaoNovoBtn').onclick = ()=>{
+  const f = document.getElementById('cartaoNovoForm'), b = document.getElementById('cartaoNovoBtn');
+  f.hidden = !f.hidden; b.setAttribute('aria-expanded', String(!f.hidden));
+  if(!f.hidden){ if(ehCasal() && cnTitular===null) cnTitular = PESSOA_FIXA; montaCartaoNovoTitular(); document.getElementById('cnNome').focus(); }
+};
+document.getElementById('cnSalvar').onclick = async ()=>{
+  const nome = document.getElementById('cnNome').value.trim();
+  if(!nome){ toast('Digite o nome do cartão'); return; }
+  const btn = document.getElementById('cnSalvar'); btn.disabled = true;
+  try{
+    const resp = await Api.criar('cartoes', {
+      nome, forma:'Cartão de crédito', quem: ehCasal() ? cnTitular : null,
+      melhorDiaCompra: document.getElementById('cnMelhor').value || null,
+      diaVencimentoFatura: document.getElementById('cnVenc').value || null,
+      limiteDisponivel: document.getElementById('cnLimite').value || 0,
+    });
+    cartoes.push(resp.item);
+    ['cnNome','cnMelhor','cnVenc','cnLimite'].forEach(id=> document.getElementById(id).value = '');
+    document.getElementById('cartaoNovoForm').hidden = true; document.getElementById('cartaoNovoBtn').setAttribute('aria-expanded','false');
+    desenhaTudo(); toast('Cartão cadastrado');
+  }catch(e){ toast('✕ ' + ((e && e.message) || 'Sem conexão')); }
+  finally{ btn.disabled = false; }
+};
+function montaFiltrosPessoa(){
+  const casal = ehCasal();
+  [['wrapDashPessoa','dashFiltroPessoa'],['wrapVarQuem','gFiltroQuem']].forEach(([w,sel])=>{
+    const wrap = document.getElementById(w), el = document.getElementById(sel);
+    if(!wrap || !el) return;
+    wrap.hidden = !casal;
+    const atual = el.value;
+    el.innerHTML = '<option value="">Todos</option>' + (perfil.pessoas||[]).map(pp=>`<option value="${esc(pp.id)}">${esc(pp.nome)}</option>`).join('');
+    el.value = (perfil.pessoas||[]).some(pp=>pp.id===atual) ? atual : '';
+  });
+  if(!casal){ filtroDashPessoa = ''; filtroVariavelQuem = ''; }
+}
+document.getElementById('dashFiltroPessoa').onchange = e=>{ filtroDashPessoa = e.target.value; desenhaTudo(); };
+document.getElementById('gFiltroQuem').onchange = e=>{ filtroVariavelQuem = e.target.value; desenhaTudo(); };
 document.querySelectorAll('[data-gforma]').forEach(b=> b.onclick = ()=>{
   graficoForma = b.dataset.gforma;
   try{ localStorage.setItem('grafico-forma', graficoForma); }catch(e){}
@@ -2385,8 +2509,9 @@ function totalFixasPagas(){
 }
 function cartoesAtivos(){ return cartoes.filter(c=>c.ativo!==false); }
 function temaCartao(c){
-  // visual único para todos os cartões; o nome do cartão já está escrito nele
-  return {classe:'generico', selo:''};
+  // cor do banco quando o nome do cartão lembra um (ex.: "Visa Nubank" = roxo); senão, verde padrão
+  const bco = bancoDe(c.nome);
+  return {classe:'generico', selo:'', estilo: bco ? `--cc:${bco.card}` : ''};
 }
 function ordenaCarteira(lista){ return [...lista]; }
 function ligaCarteiraCartoes(container){
@@ -2422,15 +2547,42 @@ function pagamentosDesde(c, base, conta){
   return (c.pagamentos||[]).filter(p=>p.data>=base && (!conta || (p.conta||contaPrincipal())===conta)).reduce((s,p)=>s+p.valor,0);
 }
 // Recebimentos sem conta marcada contam como da conta principal.
-// "logo" da conta: círculo com as iniciais, na cor escolhida no cadastro (ou numa cor derivada do nome)
+// Ícones dos bancos: selo redondo na cor do banco com a marca escrita (parecido com o logo, sem usar o arquivo oficial).
+// Para usar o logo oficial de um banco, ponha o arquivo em /logos/<chave>.png e liste a chave em LOGOS_IMG.
+const LOGOS_IMG = new Set([]);   // ex.: new Set(['nubank','c6'])
+const BANCOS = [
+  {k:'nubank',  re:/nubank|\bnu\b/,            cor:'#820AD1', fg:'#fff',    t:'nu',    card:'#820AD1'},
+  {k:'c6',      re:/\bc6\b/,                    cor:'#1D1D1F', fg:'#fff',    t:'C6',    card:'#242426'},
+  {k:'itau',    re:/ita[uú]/,                   cor:'#EC7000', fg:'#14307A', t:'itaú',  card:'#E36A00'},
+  {k:'inter',   re:/\binter\b/,                 cor:'#FF7A00', fg:'#fff',    t:'inter', card:'#F26E00'},
+  {k:'bradesco',re:/bradesco/,                  cor:'#CC092F', fg:'#fff',    t:'B',     card:'#B50829'},
+  {k:'santander',re:/santander/,                cor:'#EC0000', fg:'#fff',    t:'S',     card:'#D00000'},
+  {k:'caixa',   re:/caixa/,                     cor:'#005CA9', fg:'#fff',    t:'CAIXA', card:'#005CA9'},
+  {k:'bb',      re:/banco do brasil|\bbb\b/,    cor:'#FCE300', fg:'#0038A8', t:'BB',    card:'#0A3A9B'},
+  {k:'mercadopago',re:/mercado ?pago/,          cor:'#009EE3', fg:'#fff',    t:'MP',    card:'#0A8CCB'},
+  {k:'picpay',  re:/picpay/,                    cor:'#21C25E', fg:'#fff',    t:'pp',    card:'#1AA14D'},
+  {k:'xp',      re:/\bxp\b/,                    cor:'#0B0B0B', fg:'#FFD400', t:'XP',    card:'#1A1A1A'},
+  {k:'btg',     re:/\bbtg\b/,                   cor:'#001E62', fg:'#fff',    t:'BTG',   card:'#001E62'},
+  {k:'sicoob',  re:/sicoob/,                    cor:'#003641', fg:'#7DB61C', t:'S',     card:'#003641'},
+  {k:'sicredi', re:/sicredi/,                   cor:'#3FA110', fg:'#fff',    t:'Si',    card:'#348A0D'},
+  {k:'will',    re:/will/,                      cor:'#FFE500', fg:'#111',    t:'will',  card:'#B89E00'},
+  {k:'pagbank', re:/pag ?bank|pagseguro/,       cor:'#1FB04B', fg:'#fff',    t:'PB',    card:'#168A3B'},
+  {k:'next',    re:/\bnext\b/,                  cor:'#00FF5F', fg:'#111',    t:'next',  card:'#009C3A'},
+];
+const semAcentoCli = t => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function bancoDe(nome){ const n = semAcentoCli(nome); return BANCOS.find(b=> b.re.test(n)) || null; }
 function corDaConta(nome){
+  const bco = bancoDe(nome); if(bco) return bco.cor;
   const c = (perfil.contas||[]).find(x=>x.nome===nome);
   if(c && c.cor) return c.cor;
   let h = 0; for(const ch of String(nome)) h = (h*31 + ch.charCodeAt(0)) % 360;
   return `hsl(${h} 45% 38%)`;
 }
 function logoConta(nome){
-  return `<span class="logo-banco"><span class="logo-ini" style="background:${corDaConta(nome)}">${esc(iniciaisDe(nome))}</span></span>`;
+  const bco = bancoDe(nome);
+  const txt = bco ? bco.t : iniciaisDe(nome);
+  const img = bco && LOGOS_IMG.has(bco.k) ? `<img src="/logos/${bco.k}.png" alt="" onerror="this.remove()">` : '';
+  return `<span class="logo-banco"><span class="logo-ini${txt.length>2?' m':''}" style="background:${corDaConta(nome)};color:${bco?bco.fg:'#fff'}">${esc(txt)}${img}</span></span>`;
 }
 function baseConta(nome){
   const b = (tetos.saldosContas||{})[nome] || {};
@@ -2941,7 +3093,7 @@ function desenhaTudo(){
         const pct = limite>0 ? Math.round((c.fat/limite)*100) : 0;
         const corBarra = limite===0 ? 'var(--line)' : c.fat/limite>1 ? 'var(--vermelho)' : c.fat/limite>=0.8 ? 'var(--ochre)' : 'var(--acento)';
         return `<div class="item-carteira">
-          <div class="cartao ${tema.classe}">
+          <div class="cartao ${tema.classe}" style="${tema.estilo||''}">
             <div class="cartao-topo">
               <div class="cartao-marca"><span class="cartao-marca-nome">${esc(c.nome)}</span><small>${esc(c.forma||'Cartão de crédito')}</small></div>
               ${tema.selo?`<span class="cartao-selo">${tema.selo}</span>`:''}
@@ -3094,7 +3246,7 @@ function desenhaTudo(){
         const pct = limite>0 ? Math.round((fat/limite)*100) : 0;
         const corBarra = limite===0 ? 'var(--line)' : fat/limite>1 ? 'var(--vermelho)' : fat/limite>=0.8 ? 'var(--ochre)' : 'var(--acento)';
         return `<div class="item-carteira">
-          <div class="cartao ${tema.classe}">
+          <div class="cartao ${tema.classe}" style="${tema.estilo||''}">
             <div class="cartao-topo">
               <div class="cartao-marca"><span class="cartao-marca-nome">${esc(c.nome)}</span><small>${esc(c.forma||'Cartão de crédito')}</small></div>
               ${tema.selo?`<span class="cartao-selo">${tema.selo}</span>`:''}
@@ -4767,6 +4919,7 @@ const FaceId = (()=>{
     return j;
   }
   function guardaSessao(j, credId){
+    if(j.pessoa){ PESSOA_FIXA = j.pessoa; lsSet('quem', j.pessoa); }
     lsSet('sessao', j.sessao); lsSet('sessao-exp', String(j.expiraEm)); lsSet('faceid', '1');
     if(credId) lsSet('faceid-cred', credId);
     lsSet('ultimo-uso', String(Date.now()));
@@ -4777,7 +4930,7 @@ const FaceId = (()=>{
   async function cadastrar(codigo){
     if(!suportado) throw new Error('Este navegador não tem Face ID.');
     const op = await auth('opcoesRegistro', {codigo});
-    const nome = NOMES_PESSOA[PESSOA_FIXA];
+    const nome = NOMES_PESSOA[PESSOA_FIXA] || 'Eu';
     const c = await navigator.credentials.create({publicKey:{
       challenge: b64uParaBuf(op.desafio),
       rp: {name:'Controle Financeiro', id: location.hostname},
@@ -4791,7 +4944,7 @@ const FaceId = (()=>{
     const j = await auth('registra', {
       id: c.id, desafio: op.desafio, chave: bufParaB64(r.getPublicKey()), alg: r.getPublicKeyAlgorithm(),
       clientData: bufParaB64u(r.clientDataJSON), authData: bufParaB64u(r.getAuthenticatorData()),
-      pessoa: PESSOA_FIXA, aparelho: aparelho(),
+      pessoa: PESSOA_FIXA, aparelho: aparelho(),   // o servidor decide: convite = pessoa do convite
     });
     guardaSessao(j, c.id);
   }
@@ -4911,7 +5064,7 @@ const FaceId = (()=>{
   // o app sempre abre do topo (o navegador às vezes volta a rolagem antiga)
   try{ history.scrollRestoration = 'manual'; }catch(e){}
   el('trancaAv').textContent = el('avTopo').textContent;
-  el('trancaOla').textContent = 'Olá, ' + NOMES_PESSOA[PESSOA_FIXA];
+  el('trancaOla').textContent = NOMES_PESSOA[PESSOA_FIXA] ? 'Olá, ' + NOMES_PESSOA[PESSOA_FIXA] : 'Olá';
   el('trancaBtn').onclick = desbloquear;
   el('trancaTroca').onclick = ()=>{
     const paraCodigo = el('trancaNovo').hidden;
@@ -4979,6 +5132,7 @@ const FaceId = (()=>{
         </select></label>
       <div class="face-lista" aria-label="Celulares cadastrados">${lista}</div>
       <div id="faceConvite"></div>
+      ${ehCasal() ? `<label class="troca" for="faceParaQuem"><span>Liberar para</span><select id="faceParaQuem" style="width:auto">${(perfil.pessoas||[]).map(pp=>`<option value="${esc(pp.id)}"${pp.id!==PESSOA_FIXA?' selected':''}>${esc(pp.nome)}</option>`).join('')}</select></label>` : ''}
       <div class="face-botoes">
         <button type="button" class="btn secundario full" id="faceLiberar">Liberar outro celular</button>
         <button type="button" class="btn risco full" id="faceDesligar">Desligar Face ID</button>
@@ -4993,7 +5147,7 @@ const FaceId = (()=>{
     }));
     el('faceLiberar').onclick = async ()=>{
       try{
-        const j = await auth('convite', {});
+        const j = await auth('convite', {pessoa: (el('faceParaQuem')||{}).value});
         el('faceConvite').innerHTML = `<div class="face-codigo">${j.codigo.slice(0,3)} ${j.codigo.slice(3)}</div>
           <p class="sub" style="text-align:center">Vale por ${j.validoMin} minutos. No outro celular, abra o app e toque em “Primeira vez neste celular? Usar código”.</p>`;
       }catch(e){ toast('✕ ' + e.message); }
@@ -5028,10 +5182,10 @@ const FaceId = (()=>{
 const BV_SUGESTOES = ['Nubank','C6 Bank','Itaú','Inter','Bradesco','Santander','Caixa','Banco do Brasil','Mercado Pago','PicPay'];
 const BoasVindas = (()=>{
   const el = id => document.getElementById(id);
-  let escolhidas = [];
+  let escolhidas = [], modo = 1;
   const pinta = ()=>{
     const nomes = [...new Set([...BV_SUGESTOES, ...escolhidas])];
-    el('bvContas').innerHTML = nomes.map(n=>`<button type="button" class="chip" data-bv="${esc(n)}" aria-pressed="${escolhidas.includes(n)}">${esc(n)}</button>`).join('');
+    el('bvContas').innerHTML = nomes.map(n=>`<button type="button" class="chip bv-chip" data-bv="${esc(n)}" aria-pressed="${escolhidas.includes(n)}">${logoConta(n)}<span>${esc(n)}</span></button>`).join('');
     el('bvContas').querySelectorAll('[data-bv]').forEach(b=> b.onclick = ()=>{
       const n = b.dataset.bv;
       escolhidas = escolhidas.includes(n) ? escolhidas.filter(x=>x!==n) : [...escolhidas, n];
@@ -5042,9 +5196,15 @@ const BoasVindas = (()=>{
     if(el('boasVindas').classList.contains('on')) return;
     escolhidas = (perfil.contas||[]).map(c=>c.nome);
     el('bvNome').value = perfil.nome || '';
+    modo = 1; el('bvSegunda').hidden = true; el('bvModo').querySelectorAll('[data-modo]').forEach(b=> b.setAttribute('aria-pressed', String(b.dataset.modo==='1')));
     el('bvPasso1').hidden = false; el('bvPasso2').hidden = true; el('bvP2').classList.remove('on');
     pinta(); el('boasVindas').classList.add('on');
   };
+  el('bvModo').querySelectorAll('[data-modo]').forEach(b=> b.onclick = ()=>{
+    modo = Number(b.dataset.modo); el('bvSegunda').hidden = modo!==2;
+    el('bvModo').querySelectorAll('[data-modo]').forEach(x=> x.setAttribute('aria-pressed', String(x===b)));
+    if(modo===2) el('bvNome2').focus();
+  });
   el('bvAddOutra').onclick = ()=>{
     const n = el('bvOutra').value.trim().slice(0,30);
     if(n && !escolhidas.some(x=>x.toLowerCase()===n.toLowerCase())) escolhidas.push(n);
@@ -5054,15 +5214,18 @@ const BoasVindas = (()=>{
     const nome = el('bvNome').value.trim();
     const pendente = el('bvOutra').value.trim();
     if(pendente && !escolhidas.some(x=>x.toLowerCase()===pendente.toLowerCase())) escolhidas.push(pendente.slice(0,30));
+    const nome2 = modo===2 ? el('bvNome2').value.trim() : '';
     if(!nome){ el('bvErro').textContent = 'Digite o seu nome.'; return; }
+    if(modo===2 && !nome2){ el('bvErro').textContent = 'Digite o nome da outra pessoa (ou escolha “Só eu”).'; return; }
     if(escolhidas.length===0){ el('bvErro').textContent = 'Escolha ao menos uma conta (a primeira será a principal).'; return; }
     el('bvErro').textContent = '';
     const btn = el('bvContinuar'); btn.disabled = true; btn.textContent = 'Salvando...';
     try{
       const r = await chamaApi('/api/gastos?recurso=perfil', {method:'PUT', headers:{'content-type':'application/json'},
-        body: JSON.stringify({nome, contas: escolhidas.map(n=>({nome:n})), concluido:true})});
+        body: JSON.stringify({nome, pessoas: nome2 ? [nome, nome2] : [nome], contas: escolhidas.map(n=>({nome:n})), concluido:true})});
       if(!r.ok) throw await erroApi(r, 'falha ao salvar');
       aplicaPerfil(await r.json());
+      el('bvLiCasal').hidden = !nome2;
       el('bvOla').textContent = nome; el('bvPasso1').hidden = true; el('bvPasso2').hidden = false; el('bvP2').classList.add('on');
       try{ desenhaTudo(); }catch(e){}
     }catch(e){

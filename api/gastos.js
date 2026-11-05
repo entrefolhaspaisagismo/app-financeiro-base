@@ -31,7 +31,7 @@ const PADRAO = {
   // investimentos que rendem % do CDI (saldo recalculado no app com o CDI do Banco Central)
   investimentos: [],
   // quem usa o app: nome, contas bancárias (Pix/débito) e se a boas-vindas já foi concluída
-  perfil: { nome: "", contas: [], concluido: false },
+  perfil: { nome: "", contas: [], concluido: false, pessoas: [] },
 };
 const CHAVE_CDI = `${PREFIXO}-cdi`;
 const CDI_VALIDADE_MS = 6 * 60 * 60 * 1000;
@@ -89,7 +89,9 @@ async function lerTudo() {
     // saldo inicial + data-base de cada conta: { "Nome da conta": { inicial, data } }
     saldosContas: t.saldosContas || {},
   };
-  dados.perfil = { nome: "", contas: [], concluido: false, ...(dados.perfil || {}) };
+  dados.perfil = { nome: "", contas: [], concluido: false, pessoas: [], ...(dados.perfil || {}) };
+  // pessoas que usam o app: sempre há a primeira ("EU"); a segunda ("P2") só no modo casal
+  if (!Array.isArray(dados.perfil.pessoas) || !dados.perfil.pessoas.length) dados.perfil.pessoas = [{ id: "EU", nome: dados.perfil.nome || "" }];
   return dados;
 }
 
@@ -182,7 +184,10 @@ function novoPendente(dados, b) {
   const estab = String(k.estabelecimento || k.comerciante || k.merchant || "").trim().slice(0, 80);
   if (!(valor > 0) || !estab) return { erro: "valor e estabelecimento são obrigatórios" };
   const data = /^\d{4}-\d{2}-\d{2}$/.test(String(k.data || "")) ? k.data : hojeBR();
-  const quem = "EU";
+  // de quem é a compra: o atalho manda o nome ("quem"); sem nome ou sem casar, é da primeira pessoa
+  const pessoas = (dados.perfil && dados.perfil.pessoas) || [];
+  const dona = pessoas.find((p) => semAcento(p.nome) === semAcento(k.quem));
+  const quem = (dona && dona.id) || "EU";
   const cartaoTxt = semAcento(k.cartao);
   const contas = (dados.perfil && dados.perfil.contas) || [];
   // padrão: débito na primeira conta (é o que mais se usa); quem usou crédito troca no seletor e o app lembra por estabelecimento
@@ -421,6 +426,16 @@ module.exports = async function handler(req, res) {
       if (method === "PUT") {
         const atual = { ...dados.perfil };
         if (typeof body.nome === "string") atual.nome = body.nome.trim().slice(0, 40);
+        // lista de nomes (1 ou 2): o primeiro é "EU", o segundo "P2"; mandar só o primeiro volta ao uso individual
+        if (Array.isArray(body.pessoas)) {
+          const nomes = body.pessoas.map((p) => String((p && p.nome) || p || "").trim().slice(0, 40)).filter(Boolean).slice(0, 2);
+          if (nomes.length) {
+            atual.pessoas = nomes.map((nome, i) => ({ id: i === 0 ? "EU" : "P2", nome }));
+            atual.nome = nomes[0];
+          }
+        } else if (typeof body.nome === "string" && Array.isArray(atual.pessoas) && atual.pessoas.length) {
+          atual.pessoas = atual.pessoas.map((p, i) => (i === 0 ? { ...p, nome: atual.nome } : p));
+        }
         if (Array.isArray(body.contas)) {
           const vistos = new Set();
           atual.contas = body.contas

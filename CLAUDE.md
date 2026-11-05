@@ -33,8 +33,15 @@ explique o que fazer em cada site e confira o resultado antes de seguir.
    (Configurações → Saldo das contas) e categorias (Configurações → Categorias).
 
 ## Regras do modelo (não quebre ao personalizar)
-- `quem` dos lançamentos é sempre `"EU"`. A primeira conta cadastrada é a **conta principal** (`contaPrincipal()`
-  em `index.html`): recebe recebimentos sem conta marcada, contas fixas e faturas pagas.
+- `quem` dos lançamentos é o id da pessoa: `"EU"` (primeira) ou `"P2"` (segunda, modo casal opcional). Os nomes ficam em
+  `perfil.pessoas`. Cada celular sabe quem é: o Face ID cadastra o celular com a pessoa (convite gerado em
+  Configurações → Face ID → "Liberar outro celular", escolhendo "Liberar para"); fica em `localStorage 'quem'`
+  e pode ser trocado em Configurações → Pessoas. Os dados são compartilhados; há filtros por pessoa no modo casal.
+- A primeira conta cadastrada é a **conta principal** (`contaPrincipal()` em `index.html`): recebe recebimentos sem
+  conta marcada, contas fixas e faturas pagas.
+- Cartões de crédito são cadastrados em Cartões → "+ Novo cartão" (nome, melhor dia, vencimento, limite, titular).
+- Ícones dos bancos: `BANCOS` em `index.html` (selo na cor do banco). Para usar o logo oficial, ponha o arquivo em
+  `/logos/<chave>.png` e liste a chave em `LOGOS_IMG`.
 - Fatura do cartão = data de vencimento do ciclo (`dataFaturaDaCompra` em `api/gastos.js`); o dia real da compra
   fica em `dataCompra`. Pagamento é por ciclo (`pagamentos[].ciclo`).
 - Dados pessoais ficam no Redis, **nunca no código**. Mantenha assim: cores, categorias e contas dele são dados.
