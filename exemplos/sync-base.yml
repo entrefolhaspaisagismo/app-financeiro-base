@@ -1,5 +1,8 @@
 # Sincronização automática com o repositório base.
-# Roda no repositório do USUÁRIO (a cópia/fork), uma vez por dia: puxa a branch "estavel" do base e
+# COMO USAR: no repositório do USUÁRIO, crie o arquivo  .github/workflows/sync-base.yml  com este conteúdo
+# (GitHub → Add file → Create new file). Depois: aba Actions → habilitar → "Sincronizar com o base" → Run workflow.
+#
+# Roda no repositório do USUÁRIO, uma vez por dia: puxa a branch "estavel" do base e
 # publica no main dele; a Vercel republica sozinha. Se houver conflito com mudanças pessoais, para e
 # o GitHub avisa por e-mail (a execução aparece como falha em Actions) — nada é sobrescrito.
 #
@@ -17,8 +20,6 @@ permissions:
 
 jobs:
   sincronizar:
-    # no próprio repositório base não faz nada
-    if: github.repository != 'entrefolhaspaisagismo/app-financeiro-base'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
