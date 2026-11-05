@@ -66,7 +66,8 @@ Alternativa sem terminal: no GitHub, botão **Sync fork** na página do reposit�
 ## Sincronização automática (repositório do usuário)
 O modelo da rotina está em `exemplos/sync-base.yml` (no base). No repositório do **usuário**, crie
 `.github/workflows/sync-base.yml` com esse conteúdo (uma vez só, à mão: a atualização nunca altera arquivos de
-workflow) e ligue em **Actions**. Ela puxa todo dia a branch **`estavel`** do base
+workflow) e ligue em **Actions**. A rotina assina os commits como o dono do repositório e sempre cria um commit de
+merge (`--no-ff`): no plano gratuito da Vercel, commits de outra assinatura ficam **Bloqueados** e o app não republica. Ela puxa todo dia a branch **`estavel`** do base
 (`entrefolhaspaisagismo/app-financeiro-base`) para o `main` do usuário; a Vercel republica sozinha.
 Se houver conflito, a rotina para e falha (sem sobrescrever nada): rode
 `git fetch upstream estavel && git merge upstream/estavel` (adicione o remoto `upstream` se faltar),
