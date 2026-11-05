@@ -3,6 +3,9 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.2.2
+- Ícone do Banco Safra (e Safra entre as sugestões da boas-vindas).
+
 ## v1.2.1
 - Guia do atalho: o caminho dos avisos é Configurações → Avisos no celular.
 - Correção: com `CODIGO_INICIAL` definido, o app agora pede o código ao ativar o Face ID (antes a ativação falhava).
