@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Chaves dos avisos</title>
+<style>
+  :root{--bg:#F7F2F0;--card:#fff;--fg:#1C0F12;--soft:#5A4746;--line:#E9DCD9;--ac:#8E1B2E;--ok:#1F6B4F}
+  @media (prefers-color-scheme:dark){:root{--bg:#1A1012;--card:#26181B;--fg:#F4ECEC;--soft:#B8A5A7;--line:#42292D;--ac:#C2354D;--ok:#6BCB9C}}
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+  main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  h1{font-size:24px;margin:0}
+  p{margin:0;color:var(--soft)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+  label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft)}
+  textarea{width:100%;min-height:78px;border:1px solid var(--line);border-radius:10px;padding:10px;background:transparent;color:var(--fg);font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;resize:none}
+  button{border:0;border-radius:12px;padding:13px 16px;background:var(--ac);color:#fff;font:700 15px system-ui;cursor:pointer}
+  button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac);padding:9px 14px;font-size:14px;align-self:flex-start}
+  .aviso{border-left:4px solid var(--ac);padding:8px 12px;background:var(--card);border-radius:8px;font-size:14px;color:var(--soft)}
+  #saida{display:none;flex-direction:column;gap:14px}
+  .ok{color:var(--ok);font-size:14px;min-height:20px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Chaves dos avisos no celular</h1>
+  <p>Gere um par de chaves para o app enviar avisos ao seu celular. A geração acontece aqui no seu navegador: nada é enviado nem guardado em lugar nenhum.</p>
+  <button id="gerar" type="button">Gerar chaves</button>
+  <div id="saida">
+    <div class="card">
+      <label for="pub">VAPID_PUBLIC_KEY</label>
+      <textarea id="pub" readonly></textarea>
+      <button class="sec" type="button" data-copia="pub">Copiar</button>
+    </div>
+    <div class="card">
+      <label for="priv">VAPID_PRIVATE_KEY (secreta)</label>
+      <textarea id="priv" readonly></textarea>
+      <button class="sec" type="button" data-copia="priv">Copiar</button>
+    </div>
+    <p class="ok" id="ok" role="status"></p>
+    <div class="aviso">Na Vercel: o projeto → <b>Settings</b> → <b>Environment Variables</b>. Crie <b>VAPID_PUBLIC_KEY</b> e <b>VAPID_PRIVATE_KEY</b> com esses valores, e depois faça <b>Redeploy</b>. A chave privada é secreta: não envie para ninguém e não publique.</div>
+  </div>
+</main>
+<script>
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+document.getElementById('gerar').onclick = async ()=>{
+  const kp = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']);
+  document.getElementById('pub').value = b64u(await crypto.subtle.exportKey('raw', kp.publicKey));
+  document.getElementById('priv').value = (await crypto.subtle.exportKey('jwk', kp.privateKey)).d;
+  document.getElementById('saida').style.display = 'flex';
+  document.getElementById('gerar').textContent = 'Gerar outro par';
+};
+document.querySelectorAll('[data-copia]').forEach(b=> b.onclick = async ()=>{
+  const el = document.getElementById(b.dataset.copia); el.select();
+  try{ await navigator.clipboard.writeText(el.value); document.getElementById('ok').textContent = 'Copiado!'; }
+  catch(e){ document.execCommand('copy'); document.getElementById('ok').textContent = 'Copiado (ou selecione e copie).'; }
+});
+</script>
+</body>
+</html>

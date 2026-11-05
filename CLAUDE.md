@@ -63,6 +63,11 @@ Ele **não precisa** atualizar: a versão que ele já usa continua funcionando c
 "recomendada" no `CHANGELOG.md` trazem correções de segurança ou de dados.
 Alternativa sem terminal: no GitHub, botão **Sync fork** na página do repositório dele.
 
+## Avisos no celular e atalho do Apple Pay (opcional)
+Passo a passo em `exemplos/atalho-apple-pay.md`. As chaves dos avisos são geradas no navegador, em `/chaves.html`
+(nada é enviado a lugar nenhum); a chave privada vai só para a Vercel (`VAPID_PRIVATE_KEY`). Nunca peça nem cole
+chaves, tokens ou senhas na conversa.
+
 ## Sincronização automática (repositório do usuário)
 O modelo da rotina está em `exemplos/sync-base.yml` (no base). No repositório do **usuário**, crie
 `.github/workflows/sync-base.yml` com esse conteúdo (uma vez só, à mão: a atualização nunca altera arquivos de
