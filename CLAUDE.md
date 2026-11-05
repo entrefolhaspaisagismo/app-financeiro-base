@@ -56,6 +56,14 @@ Ele **não precisa** atualizar: a versão que ele já usa continua funcionando c
 "recomendada" no `CHANGELOG.md` trazem correções de segurança ou de dados.
 Alternativa sem terminal: no GitHub, botão **Sync fork** na página do repositório dele.
 
+## Sincronização automática (repositório do usuário)
+`.github/workflows/sync-base.yml` puxa todo dia a branch **`estavel`** do base (`entrefolhaspaisagismo/app-financeiro-base`)
+para o `main` do usuário; a Vercel republica sozinha. No repositório do usuário é preciso ligar uma vez:
+aba **Actions** → **Enable workflows**. Se houver conflito, a rotina para e falha (sem sobrescrever nada):
+nesse caso, rode `git fetch upstream estavel && git merge upstream/estavel` (adicione o remoto `upstream` se faltar),
+resolva preservando as mudanças pessoais e envie. Evite mudar `.github/workflows/sync-base.yml`.
+No repositório base: o trabalho vai no `main`; só o que está aprovado vai para `estavel`.
+
 ## Testar localmente (opcional)
 Não há build. `vercel dev` com as variáveis de ambiente, ou abrir os arquivos num servidor estático.
 Antes de mexer em `index.html`, confira a sintaxe do JavaScript dentro das tags `<script>`.
