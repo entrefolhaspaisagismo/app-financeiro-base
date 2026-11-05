@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
     if (acao === "inscrever") {
       const s = body.subscription || {};
       const modo = String(body.modo || "");
-      const pessoa = "EU"; // app de uma pessoa só
+      const pessoa = /^[A-Za-z0-9_-]{1,20}$/.test(String(body.pessoa || "")) ? String(body.pessoa) : "EU";
       if (!P.MODOS.includes(modo)) return res.status(400).json({ erro: "modo inválido" });
       if (!/^https:\/\//.test(String(s.endpoint || "")) || !s.keys || !s.keys.p256dh || !s.keys.auth) return res.status(400).json({ erro: "inscrição inválida" });
       const outras = subs.filter((x) => x.endpoint !== s.endpoint);

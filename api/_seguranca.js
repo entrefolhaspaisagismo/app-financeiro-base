@@ -91,28 +91,33 @@ async function liberado(req) {
 }
 
 // ---------- desafios e convites ----------
-async function novoDesafio(tipo) {
+// `extra` viaja junto com o desafio (ex.: de quem é o celular que está se cadastrando)
+async function novoDesafio(tipo, extra) {
   const desafio = b64u(crypto.randomBytes(32));
-  await redis("set", PREFIXO_DESAFIO + desafio, tipo, "EX", DESAFIO_S);
+  await redis("set", PREFIXO_DESAFIO + desafio, `${tipo}|${extra || ""}`, "EX", DESAFIO_S);
   return desafio;
 }
 async function usaDesafio(desafio, tipo) {
   if (!/^[A-Za-z0-9_-]{20,100}$/.test(String(desafio || ""))) return false;
   const v = await redis("getdel", PREFIXO_DESAFIO + desafio);
-  return v === tipo;
+  if (typeof v !== "string") return null;
+  const [t, ...resto] = v.split("|");
+  return t === tipo ? { extra: resto.join("|") } : null;   // objeto (sempre verdadeiro) ou null
 }
-async function novoConvite() {
+// o convite guarda para quem é o celular novo (id da pessoa)
+async function novoConvite(pessoa) {
   const codigo = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
-  await redis("set", PREFIXO_CONVITE + codigo, "1", "EX", CONVITE_S);
+  await redis("set", PREFIXO_CONVITE + codigo, pessoa || "EU", "EX", CONVITE_S);
   return codigo;
 }
 async function usaConvite(codigo) {
-  if (!/^\d{6}$/.test(String(codigo || ""))) return false;
+  if (!/^\d{6}$/.test(String(codigo || ""))) return null;
   // trava chutes: no máximo 10 tentativas a cada 10 minutos
   const n = await redis("incr", CHAVE_TENTATIVAS);
   if (n === 1) await redis("expire", CHAVE_TENTATIVAS, CONVITE_S);
-  if (n > TENTATIVAS_MAX) return false;
-  return (await redis("getdel", PREFIXO_CONVITE + codigo)) === "1";
+  if (n > TENTATIVAS_MAX) return null;
+  const v = await redis("getdel", PREFIXO_CONVITE + codigo);
+  return v ? (v === "1" ? "EU" : v) : null;   // devolve o id da pessoa, ou null se o código não vale
 }
 
 // ---------- conferência do WebAuthn ----------
