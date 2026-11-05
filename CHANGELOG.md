@@ -3,6 +3,9 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.1.1
+- Textos que ficaram do app original ("da família") agora são neutros; o titular do cartão sem dono mostra "Os dois" no modo casal.
+
 ## v1.1.0 **(recomendada)**
 - **Cadastro de cartões de crédito** na tela Cartões ("+ Novo cartão"): faltava na v1.0.0.
 - **Modo casal (opcional):** duas pessoas no mesmo app, com dados compartilhados, filtro por pessoa, cartões por titular

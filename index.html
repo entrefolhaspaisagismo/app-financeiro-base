@@ -860,7 +860,7 @@ aplicaVisual();
     <div class="puxador" aria-hidden="true"></div>
     <div class="brand">
       <div class="logo">Controle</div>
-      <div class="sub">Financeiro da família</div>
+      <div class="sub">Meu controle financeiro</div>
     </div>
     <div class="perfil">
       <div class="av" id="perfilAv">?</div>
@@ -1025,9 +1025,9 @@ aplicaVisual();
           </div>
         </div>
 
-        <!-- Bloco 4 — Visão consolidada da família -->
+        <!-- Bloco 4 — Visão consolidada -->
         <div class="card">
-          <h2>Visão consolidada da família</h2>
+          <h2>Visão consolidada</h2>
           <p class="sub">Total gasto no mês — fixo, variável e cartão, de ambos</p>
           <div class="consolidado">
             <div class="consolidado-total"><div class="l">Total do mês</div><div class="v" id="kTotalFamilia">R$ 0,00</div></div>
@@ -3110,7 +3110,7 @@ function desenhaTudo(){
               <div class="cartao-campo"><span class="rotulo">Limite</span><b class="campo-limite">${limite>0?'R$ '+brl(limite):'—'}</b></div>
             </div>
             <div class="cartao-base">
-              <div class="cartao-titular"><span class="rotulo">Titular</span>${esc(NOMES_PESSOA[c.quem] || 'Família')}</div>
+              <div class="cartao-titular"><span class="rotulo">Titular</span>${esc(NOMES_PESSOA[c.quem] || (ehCasal() ? 'Os dois' : (NOMES_PESSOA[PESSOA_FIXA] || '')))}</div>
               <div>
                 <div class="cartao-rede"><span class="bola"></span><span class="bola"></span></div>
                 <div class="cartao-rede-rotulo">mastercard</div>
@@ -3266,7 +3266,7 @@ function desenhaTudo(){
                 <input type="number" class="cartao-campo-input r" data-climite="${c.id}" value="${c.limiteDisponivel||''}" step="0.01" min="0" placeholder="—"></div>
             </div>
             <div class="cartao-base">
-              <div class="cartao-titular"><span class="rotulo">Titular</span>${esc(NOMES_PESSOA[c.quem] || 'Família')}</div>
+              <div class="cartao-titular"><span class="rotulo">Titular</span>${esc(NOMES_PESSOA[c.quem] || (ehCasal() ? 'Os dois' : (NOMES_PESSOA[PESSOA_FIXA] || '')))}</div>
               <div>
                 <div class="cartao-rede"><span class="bola"></span><span class="bola"></span></div>
                 <div class="cartao-rede-rotulo">mastercard</div>
