@@ -2561,6 +2561,7 @@ const BANCOS = [
   {k:'bb',      re:/banco do brasil|\bbb\b/,    cor:'#FCE300', fg:'#0038A8', t:'BB',    card:'#0A3A9B'},
   {k:'mercadopago',re:/mercado ?pago/,          cor:'#009EE3', fg:'#fff',    t:'MP',    card:'#0A8CCB'},
   {k:'picpay',  re:/picpay/,                    cor:'#21C25E', fg:'#fff',    t:'pp',    card:'#1AA14D'},
+  {k:'safra',   re:/safra/,                    cor:'#002F6C', fg:'#fff',    t:'S',     card:'#00285A'},
   {k:'xp',      re:/\bxp\b/,                    cor:'#0B0B0B', fg:'#FFD400', t:'XP',    card:'#1A1A1A'},
   {k:'btg',     re:/\bbtg\b/,                   cor:'#001E62', fg:'#fff',    t:'BTG',   card:'#001E62'},
   {k:'sicoob',  re:/sicoob/,                    cor:'#003641', fg:'#7DB61C', t:'S',     card:'#003641'},
@@ -5190,7 +5191,7 @@ const FaceId = (()=>{
 </script>
 <script>
 /* ---------- boas-vindas: nome + contas, no primeiro acesso ---------- */
-const BV_SUGESTOES = ['Nubank','C6 Bank','Itaú','Inter','Bradesco','Santander','Caixa','Banco do Brasil','Mercado Pago','PicPay'];
+const BV_SUGESTOES = ['Nubank','C6 Bank','Itaú','Inter','Bradesco','Santander','Caixa','Banco do Brasil','Safra','Mercado Pago','PicPay'];
 const BoasVindas = (()=>{
   const el = id => document.getElementById(id);
   let escolhidas = [], modo = 1;
