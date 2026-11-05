@@ -3,6 +3,10 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.2.1
+- Guia do atalho: o caminho dos avisos é Configurações → Avisos no celular.
+- Correção: com `CODIGO_INICIAL` definido, o app agora pede o código ao ativar o Face ID (antes a ativação falhava).
+
 ## v1.2.0
 - Página `/chaves.html` para gerar, no próprio navegador, as chaves dos avisos no celular, e guia do atalho do
   Apple Pay em `exemplos/atalho-apple-pay.md`.

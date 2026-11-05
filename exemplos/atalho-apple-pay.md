@@ -10,8 +10,9 @@ Você só escolhe a categoria e confirma. Precisa do app instalado na Tela de In
    - `VAPID_PRIVATE_KEY` = a chave privada (secreta)
    - (opcional) `SITE_URL` = `https://SEU-ENDERECO.vercel.app`
 3. **Redeploy** (Deployments → os três pontinhos do último deploy → Redeploy).
-4. No app, aberto pelo ícone da Tela de Início: **Pendentes → Avisos no celular** → escolha o modo
-   ("Lembrete do dia", "A cada lançamento" ou "Os dois") e toque em **Ativar** (aceite a permissão).
+4. No app, aberto pelo ícone da Tela de Início: **Configurações → Avisos no celular** (toque no card para abrir) →
+   em "Quando avisar", escolha "Lembrete do dia", "A cada compra" ou "Os dois". Só então aparece o botão
+   **Ativar neste aparelho**: toque nele e aceite a permissão. Depois use **Enviar aviso de teste**.
 
 ## 2. Atalho do iPhone (Apple Pay)
 1. Na Vercel, crie a variável `ATALHO_CHAVE` com uma senha longa e inventada (não reutilize outra senha). **Redeploy**.

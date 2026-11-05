@@ -5100,7 +5100,18 @@ const FaceId = (()=>{
   }
   async function ativarAqui(btn){
     btn.disabled = true;
-    try{ await cadastrar(); toast('✓ Face ID ativado neste celular'); desenhaConfig(); }
+    try{
+      try{ await cadastrar(); }
+      catch(e){
+        // o servidor tem CODIGO_INICIAL definido: pede o código (o mesmo que está na Vercel) e tenta de novo
+        if(e && /código inicial/i.test(e.message||'')){
+          const cod = window.prompt('Digite o código inicial (CODIGO_INICIAL, definido na Vercel):');
+          if(!cod){ const c = new Error('cancelado'); c.name = 'NotAllowedError'; throw c; }
+          await cadastrar(cod.trim());
+        }else throw e;
+      }
+      toast('✓ Face ID ativado neste celular'); desenhaConfig();
+    }
     catch(e){ toast(e && e.name==='NotAllowedError' ? 'Cadastro cancelado' : '✕ ' + ((e && e.message) || 'Não deu certo')); btn.disabled = false; }
   }
   async function desenhaConfig(){
