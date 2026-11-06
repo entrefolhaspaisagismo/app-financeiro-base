@@ -3,6 +3,10 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.3.0
+- **Configurações → Diagnóstico:** mostra se avisos e atalho do Apple Pay estão configurados e o histórico das últimas
+  compras do atalho com o motivo de cada falha, com botão "Copiar relatório" (sem senhas nem chaves).
+
 ## v1.2.2
 - Ícone do Banco Safra (e Safra entre as sugestões da boas-vindas).
 

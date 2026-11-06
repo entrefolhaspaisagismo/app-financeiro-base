@@ -1474,6 +1474,20 @@ aplicaVisual();
             <label class="troca" for="cfgOcultar"><span>Abrir o app com os valores escondidos</span><input type="checkbox" id="cfgOcultar"></label>
           </div>
         </div>
+        <div class="card" id="cfgDiag">
+          <button type="button" class="invest-cab cfg-cab" id="cfgDiagCab" data-recolhe="cfgDiagCorpo" aria-expanded="false" aria-controls="cfgDiagCorpo">
+            <span class="invest-topo"><h2 style="margin:0">Diagnóstico</h2>
+              <span class="cfg-atual"><span id="cfgDiagAtual"></span> <span class="seta" aria-hidden="true">›</span></span></span>
+          </button>
+          <div id="cfgDiagCorpo" hidden style="margin-top:10px">
+            <p class="sub">Mostra se os avisos e o atalho do Apple Pay estão configurados e o que aconteceu nas últimas compras. Não mostra senhas nem chaves.</p>
+            <div id="diagLista" class="sub" style="margin-top:10px;line-height:1.7">Toque em Atualizar.</div>
+            <div class="face-botoes" style="margin-top:12px">
+              <button type="button" class="btn secundario full" id="diagAtualizar">Atualizar</button>
+              <button type="button" class="btn full" id="diagCopiar" disabled>Copiar relatório</button>
+            </div>
+          </div>
+        </div>
         <div class="card" id="cfgPessoas">
           <button type="button" class="invest-cab cfg-cab" id="cfgPessoasCab" data-recolhe="cfgPessoasCorpo" aria-expanded="false" aria-controls="cfgPessoasCorpo">
             <span class="invest-topo"><h2 style="margin:0">Pessoas</h2>
@@ -2001,6 +2015,52 @@ preencheFiltroDashCat();
 document.getElementById('dashFiltroCat').onchange = ()=>{ filtroDashCat = document.getElementById('dashFiltroCat').value; desenhaTudo(); };
 
 // filtros "por pessoa": só aparecem no modo casal
+// ---------- Configurações → Diagnóstico ----------
+const VERSAO_APP = '1.3.0';
+let diagTexto = '';
+const DIAG_RESULTADO = { recebida:'✓ Compra recebida', duplicada:'Compra repetida (ignorada)', senha:'✕ Senha do atalho incorreta',
+  campos:'✕ Faltaram dados na compra', 'sem-senha':'✕ Chegou sem a senha do atalho', teste:'Aviso de teste', lembrete:'Lembrete do dia' };
+function diagHora(iso){ try{ return new Date(iso).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); }catch(e){ return iso; } }
+function diagPush(p){
+  if(!p) return '';
+  if(p.enviados>0 && !p.falhas) return `aviso enviado (${p.enviados})`;
+  return 'aviso NÃO enviado' + (p.motivo ? ': ' + p.motivo : '');
+}
+async function diagCarrega(){
+  const el = document.getElementById('diagLista'), btnC = document.getElementById('diagCopiar');
+  el.textContent = 'Carregando…';
+  try{
+    const r = await chamaApi('/api/gastos?recurso=diagnostico');
+    if(!r.ok) throw await erroApi(r, 'falha ao carregar');
+    const d = await r.json();
+    const sv = d.servidor || {};
+    const nomePessoa = id => (d.pessoas||[]).find(x=>x.id===id)?.nome || id;
+    const NOME_MODO = { diario:'Lembrete do dia', cada:'A cada compra', ambos:'Os dois' };
+    const linhas = [
+      [sv.vapidPublica && sv.vapidPrivada, 'Avisos no servidor', sv.vapidPublica && sv.vapidPrivada ? 'chaves configuradas' : 'faltam as chaves VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY na Vercel'],
+      [sv.atalhoConfigurado, 'Atalho do Apple Pay', sv.atalhoConfigurado ? 'senha (ATALHO_CHAVE) configurada' : 'ATALHO_CHAVE não está configurada na Vercel'],
+      [(d.aparelhos||[]).length>0, 'Aparelhos com aviso', (d.aparelhos||[]).length ? d.aparelhos.map(a=>`${nomePessoa(a.pessoa)} · ${NOME_MODO[a.modo]||a.modo}`).join('; ') : 'nenhum (ative em Avisos no celular)'],
+    ];
+    const ev = (d.log||[]).slice(0,12).map(e=>({ t: diagHora(e.t), r: DIAG_RESULTADO[e.resultado] || e.resultado, det: e.detalhe||'', push: diagPush(e.push) }));
+    const ok = x=> x ? '✓' : '✕';
+    el.innerHTML = linhas.map(l=>`<div>${ok(l[0])} <b>${esc(l[1])}:</b> ${esc(l[2])}</div>`).join('')
+      + `<div>• <b>Pendentes agora:</b> ${d.pendentes}</div><div>• <b>Versão:</b> app ${VERSAO_APP} · servidor ${esc(d.versao||'?')}</div>`
+      + `<div style="margin-top:10px"><b>Últimos eventos</b></div>`
+      + (ev.length ? ev.map(e=>`<div style="padding:6px 0;border-top:1px solid var(--line)"><b>${esc(e.t)}</b> · ${esc(e.r)}${e.det?`<br><span style="opacity:.85">${esc(e.det)}</span>`:''}${e.push?`<br><span style="opacity:.85">${esc(e.push)}</span>`:''}</div>`).join('')
+        : '<div>Nenhum evento ainda. Faça uma compra de teste e toque em Atualizar.</div>');
+    diagTexto = ['RELATÓRIO — Controle Financeiro', `Versão: app ${VERSAO_APP} · servidor ${d.versao||'?'}`, `Este celular: ${NOMES_PESSOA[PESSOA_FIXA]||PESSOA_FIXA}`,
+      ...linhas.map(l=>`${ok(l[0])} ${l[1]}: ${l[2]}`), `Pendentes: ${d.pendentes}`, 'Eventos:',
+      ...(ev.length ? ev.map(e=>`- ${e.t} | ${e.r}${e.det?' | '+e.det:''}${e.push?' | '+e.push:''}`) : ['- nenhum'])].join('\n');
+    btnC.disabled = false;
+    document.getElementById('cfgDiagAtual').textContent = (linhas.every(l=>l[0])) ? '✓ Tudo configurado' : '⚠ Verificar';
+  }catch(e){ el.textContent = '✕ ' + ((e && e.message) || 'Sem conexão'); }
+}
+document.getElementById('diagAtualizar').onclick = diagCarrega;
+document.getElementById('cfgDiagCab').addEventListener('click', ()=> setTimeout(()=>{ if(document.getElementById('cfgDiagCab').getAttribute('aria-expanded')==='true') diagCarrega(); }, 0));   // depois de o card abrir
+document.getElementById('diagCopiar').onclick = async ()=>{
+  try{ await navigator.clipboard.writeText(diagTexto); toast('Relatório copiado'); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = diagTexto; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Relatório copiado'); }catch(_){ toast('Não consegui copiar'); } ta.remove(); }
+};
 function montaCfgPessoas(){
   const n1 = document.getElementById('cpNome1'); if(!n1) return;
   const pp = perfil.pessoas || [];

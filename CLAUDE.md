@@ -68,6 +68,16 @@ Passo a passo em `exemplos/atalho-apple-pay.md`. As chaves dos avisos são gerad
 (nada é enviado a lugar nenhum); a chave privada vai só para a Vercel (`VAPID_PRIVATE_KEY`). Nunca peça nem cole
 chaves, tokens ou senhas na conversa.
 
+## Diagnóstico de avisos e do Apple Pay
+Se "a compra não gerou aviso", peça ao dono: **Configurações → Diagnóstico → Copiar relatório** e colar na conversa.
+O relatório mostra o que está configurado e o resultado das últimas compras. Como ler:
+- **ATALHO_CHAVE não configurada / senha incorreta / chegou sem a senha do atalho:** a variável não existe na Vercel (ou não foi
+  republicada), ou o cabeçalho `x-atalho` do atalho do iPhone não é exatamente o mesmo valor.
+- **Faltaram dados na compra:** o corpo do atalho precisa ser JSON com `valor` e `estabelecimento` (veja "Campos recebidos").
+- **Nenhum evento:** o atalho não disparou. Confira no iPhone: Atalhos → Automação → Transação, "Executar imediatamente".
+- **Compra recebida, aviso NÃO enviado:** o motivo vem escrito (chaves VAPID, modo "Lembrete do dia", pessoa diferente etc.).
+O relatório nunca traz senhas nem chaves. Nunca peça isso ao dono.
+
 ## Sincronização automática (repositório do usuário)
 O modelo da rotina está em `exemplos/sync-base.yml` (no base). No repositório do **usuário**, crie
 `.github/workflows/sync-base.yml` com esse conteúdo (uma vez só, à mão: a atualização nunca altera arquivos de

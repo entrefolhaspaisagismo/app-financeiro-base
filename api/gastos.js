@@ -4,6 +4,7 @@
 // do mesmo JSON.
 
 const crypto = require("crypto");
+const VERSAO = "1.3.0";
 const { liberado } = require("./_seguranca");
 
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
@@ -256,26 +257,62 @@ module.exports = async function handler(req, res) {
 
     // compra enviada pelo Atalhos do iPhone: senha própria, só serve para criar pendente
     if (recurso === "pendentes" && method === "POST" && (req.headers || {})["x-atalho"] !== undefined) {
-      if (!atalhoAutorizado(req)) return res.status(401).json({ erro: "senha do atalho incorreta ou não configurada" });
+      const P = require("./_push");
+      if (!atalhoAutorizado(req)) {
+        await P.registrarLog({ tipo: "atalho", resultado: "senha",
+          detalhe: process.env.ATALHO_CHAVE ? "a senha enviada pelo atalho não confere com ATALHO_CHAVE" : "ATALHO_CHAVE não está configurada na Vercel" });
+        return res.status(401).json({ erro: "senha do atalho incorreta ou não configurada" });
+      }
       travado = await adquirirLock();
       const dados = await lerTudo();
       const r = novoPendente(dados, body);
-      if (r.erro) return res.status(400).json({ erro: r.erro });
+      if (r.erro) {
+        await P.registrarLog({ tipo: "atalho", resultado: "campos", detalhe: `${r.erro}. Campos recebidos: ${Object.keys(body || {}).join(", ") || "nenhum"}` });
+        return res.status(400).json({ erro: r.erro });
+      }
       const pend = Array.isArray(dados.pendentes) ? dados.pendentes : [];
       // evita duplicar se o atalho disparar duas vezes seguidas
-      if (pend.some((p) => p.msgId === r.item.msgId && r.item.id - p.id < 120000)) return res.status(200).json({ ok: true, duplicado: true });
+      if (pend.some((p) => p.msgId === r.item.msgId && r.item.id - p.id < 120000)) {
+        await P.registrarLog({ tipo: "atalho", resultado: "duplicada", detalhe: `${r.item.estabelecimento} · R$ ${r.item.valor}` });
+        return res.status(200).json({ ok: true, duplicado: true });
+      }
       dados.pendentes = [...pend, r.item];
       await salvarTudo(dados);
-      try { await require("./_push").avisarCompra(r.item); } catch (e) { /* o aviso nunca atrapalha o lançamento */ }
+      let push;
+      try { push = await P.avisarCompra(r.item); } catch (e) { push = { enviados: 0, falhas: 0, motivo: "erro ao avisar: " + String((e && e.message) || e) }; }  // o aviso nunca atrapalha o lançamento
+      await P.registrarLog({ tipo: "atalho", resultado: "recebida", detalhe: `${r.item.estabelecimento} · R$ ${r.item.valor}`, push });
       return res.status(200).json({ ok: true });
     }
 
     // com Face ID ativo, os dados só saem para quem desbloqueou
-    if (!(await liberado(req))) return res.status(401).json({ erro: "bloqueado" });
+    if (!(await liberado(req))) {
+      // um POST em "pendentes" sem sessão e sem o cabeçalho x-atalho: provável atalho sem a senha
+      if (recurso === "pendentes" && method === "POST") {
+        await require("./_push").registrarLog({ tipo: "atalho", resultado: "sem-senha", detalhe: "a compra chegou sem o cabeçalho x-atalho (confira o cabeçalho no atalho do iPhone)" });
+      }
+      return res.status(401).json({ erro: "bloqueado" });
+    }
 
     if (escreve) travado = await adquirirLock();
 
     const dados = await lerTudo();
+
+    // painel Configurações → Diagnóstico: só estado e histórico, nunca senhas ou chaves
+    if (recurso === "diagnostico" && method === "GET") {
+      const P = require("./_push");
+      const subs = await P.lerSubs().catch(() => []);
+      return res.status(200).json({
+        versao: VERSAO,
+        servidor: {
+          vapidPublica: !!process.env.VAPID_PUBLIC_KEY, vapidPrivada: !!process.env.VAPID_PRIVATE_KEY,
+          atalhoConfigurado: !!process.env.ATALHO_CHAVE, codigoInicial: !!process.env.CODIGO_INICIAL,
+        },
+        pessoas: (dados.perfil && dados.perfil.pessoas) || [],
+        pendentes: (dados.pendentes || []).length,
+        aparelhos: subs.map((s) => ({ pessoa: s.pessoa, modo: s.modo, servico: (() => { try { return new URL(s.endpoint).host; } catch (e) { return ""; } })() })),
+        log: await P.lerLog().catch(() => []),
+      });
+    }
 
     if (recurso === "tudo") {
       if (method === "GET") {
