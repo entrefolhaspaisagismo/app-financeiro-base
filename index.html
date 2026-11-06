@@ -2683,7 +2683,7 @@ function pagamentosDesde(c, base, conta){
 // Recebimentos sem conta marcada contam como da conta principal.
 // Ícones dos bancos: selo redondo na cor do banco com a marca escrita (parecido com o logo, sem usar o arquivo oficial).
 // Para usar o logo oficial de um banco, ponha o arquivo em /logos/<chave>.png e liste a chave em LOGOS_IMG.
-const LOGOS_IMG = new Set(['safra','nubank','c6','itau','inter','bradesco','santander','caixa','bb','picpay','xp','btg']);   // chaves de BANCOS com arquivo em /logos/<chave>.png
+const LOGOS_IMG = new Set(['safra','nubank','c6','itau','inter','bradesco','santander','caixa','bb','picpay','xp','btg','mercadopago']);   // chaves de BANCOS com arquivo em /logos/<chave>.png
 const BANCOS = [
   {k:'nubank',  re:/nubank|\bnu\b/,            cor:'#820AD1', fg:'#fff',    t:'nu',    card:'#820AD1'},
   {k:'c6',      re:/\bc6\b/,                    cor:'#1D1D1F', fg:'#fff',    t:'C6',    card:'#242426'},
