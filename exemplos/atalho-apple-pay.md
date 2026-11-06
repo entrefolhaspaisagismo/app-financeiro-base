@@ -34,3 +34,7 @@ Dicas:
   (ex.: "Visa Nubank"), usa esse; senão cai no débito da primeira conta.
 - O Apple Pay não diz se foi crédito ou débito: no primeiro lançamento você escolhe, e o app lembra por estabelecimento.
 - Cada pessoa configura o próprio atalho, no próprio iPhone, com o próprio `quem`.
+
+## Se não funcionar
+Abra **Configurações → Diagnóstico**: ele mostra o que está configurado e o resultado das últimas compras, e tem o botão
+**Copiar relatório** para mandar a quem está ajudando (o relatório não tem senhas).

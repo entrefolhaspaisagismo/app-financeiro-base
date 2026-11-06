@@ -16,7 +16,11 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === "GET" && acao === "chave") return res.status(200).json({ chave: process.env.VAPID_PUBLIC_KEY || "" });
-    if (req.method === "GET" && acao === "lembrete") return res.status(200).json(await P.lembreteDiario());
+    if (req.method === "GET" && acao === "lembrete") {
+      const r = await P.lembreteDiario();
+      await P.registrarLog({ tipo: "lembrete", resultado: "lembrete", push: { enviados: r.enviados || 0, falhas: 0, motivo: r.motivo || "" } });
+      return res.status(200).json(r);
+    }
 
     if (!(await liberado(req))) return res.status(401).json({ erro: "bloqueado" });
     if (req.method !== "POST") return res.status(405).json({ erro: "método não permitido" });
@@ -46,6 +50,7 @@ module.exports = async function handler(req, res) {
       const s = subs.find((x) => x.endpoint === body.endpoint);
       if (!s) return res.status(404).json({ erro: "aparelho não está inscrito" });
       const r = await P.enviar(s, { titulo: "Controle Financeiro", corpo: "Aviso de teste — está tudo certo!", url: P.urlPendentes(), tag: "teste" });
+      await P.registrarLog({ tipo: "teste", resultado: "teste", push: { enviados: r.ok ? 1 : 0, falhas: r.ok ? 0 : 1, motivo: r.ok ? "" : r.erro } });
       return res.status(r.ok ? 200 : 502).json(r.ok ? { ok: true } : { erro: r.erro });
     }
     return res.status(400).json({ erro: "ação desconhecida" });

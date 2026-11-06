@@ -17,6 +17,7 @@ const CHAVE_DADOS = `${PREFIXO}-dados`;
 // endereço do app: SITE_URL (se definido) ou o domínio de produção que a própria Vercel informa
 const SITE = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://exemplo.vercel.app");
 const MODOS = ["diario", "cada", "ambos"];
+const CHAVE_LOG = `${PREFIXO}-log`;
 
 function pronto() {
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
@@ -42,6 +43,18 @@ async function gravarChave(chave, valor) {
 async function lerSubs() { const v = await lerChave(CHAVE_SUBS); return Array.isArray(v) ? v : []; }
 async function salvarSubs(subs) { await gravarChave(CHAVE_SUBS, subs); }
 
+// histórico curto do que aconteceu (últimos 30 eventos), para a tela Configurações → Diagnóstico.
+// Nunca guarda senhas nem chaves; o log nunca atrapalha o fluxo principal.
+async function registrarLog(ev) {
+  try {
+    const atual = await lerChave(CHAVE_LOG);
+    const lista = Array.isArray(atual) ? atual : [];
+    lista.unshift({ t: new Date().toISOString(), ...ev });
+    await gravarChave(CHAVE_LOG, lista.slice(0, 30));
+  } catch (e) { /* ignora */ }
+}
+async function lerLog() { const v = await lerChave(CHAVE_LOG); return Array.isArray(v) ? v : []; }
+
 const hojeBR = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
 const brl = (n) => Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const urlPendentes = () => "/#pendentes";
@@ -56,11 +69,18 @@ async function enviar(sub, payload) {
 }
 
 // uma compra nova chegou do Apple Pay: avisa os aparelhos da pessoa no modo "a cada compra" (ou "ambos")
+// Devolve { enviados, falhas, motivo } para o diagnóstico.
 async function avisarCompra(item) {
-  if (!pronto()) return;
+  if (!pronto()) return { enviados: 0, falhas: 0, motivo: "as chaves VAPID não estão configuradas na Vercel" };
   const subs = await lerSubs();
-  const alvos = subs.filter((s) => (s.modo === "cada" || s.modo === "ambos") && s.pessoa === item.quem);
-  if (!alvos.length) return;
+  const daPessoa = subs.filter((s) => s.pessoa === item.quem);
+  const alvos = daPessoa.filter((s) => s.modo === "cada" || s.modo === "ambos");
+  if (!alvos.length) {
+    const motivo = !subs.length ? "nenhum aparelho com avisos ativados"
+      : !daPessoa.length ? `nenhum aparelho ativado para esta pessoa (${item.quem})`
+      : 'os aparelhos desta pessoa estão no modo "Lembrete do dia" (troque para "A cada compra" ou "Os dois")';
+    return { enviados: 0, falhas: 0, motivo };
+  }
   const payload = {
     titulo: "Nova compra no cartão",
     corpo: `R$ ${brl(item.valor)} em ${item.estabelecimento || "compra"} — toque para confirmar`,
@@ -69,6 +89,8 @@ async function avisarCompra(item) {
   const resultados = await Promise.all(alvos.map((s) => enviar(s, payload)));
   const mortos = new Set(alvos.filter((_, i) => resultados[i].gone).map((s) => s.endpoint));
   if (mortos.size) await salvarSubs(subs.filter((s) => !mortos.has(s.endpoint)));
+  const falhas = resultados.filter((r) => !r.ok);
+  return { enviados: resultados.length - falhas.length, falhas: falhas.length, motivo: falhas.length ? falhas[0].erro : "" };
 }
 
 // lembrete do dia: uma vez por dia por aparelho, só se a pessoa tiver pendentes (chamado pelo agendamento da Vercel)
@@ -93,4 +115,4 @@ async function lembreteDiario() {
   return { enviados };
 }
 
-module.exports = { MODOS, pronto, lerSubs, salvarSubs, enviar, avisarCompra, lembreteDiario, urlPendentes };
+module.exports = { MODOS, pronto, lerSubs, salvarSubs, enviar, avisarCompra, lembreteDiario, urlPendentes, registrarLog, lerLog };
