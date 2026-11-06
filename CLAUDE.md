@@ -39,6 +39,8 @@ explique o que fazer em cada site e confira o resultado antes de seguir.
   e pode ser trocado em Configurações → Pessoas. Os dados são compartilhados; há filtros por pessoa no modo casal.
 - A primeira conta cadastrada é a **conta principal** (`contaPrincipal()` em `index.html`): recebe recebimentos sem
   conta marcada, contas fixas e faturas pagas.
+- Contas bancárias (nome, ícone em foto, qual é a principal) são editadas em Configurações → Contas bancárias (`perfil.contas`).
+  O ícone escolhido pelo usuário vence o selo colorido de `BANCOS`.
 - Cartões de crédito são cadastrados em Cartões → "+ Novo cartão" (nome, melhor dia, vencimento, limite, titular).
 - Ícones dos bancos: `BANCOS` em `index.html` (selo na cor do banco). Para usar o logo oficial, ponha o arquivo em
   `/logos/<chave>.png` e liste a chave em `LOGOS_IMG`.

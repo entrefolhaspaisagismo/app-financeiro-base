@@ -1488,6 +1488,21 @@ aplicaVisual();
             </div>
           </div>
         </div>
+        <div class="card" id="cfgContas">
+          <button type="button" class="invest-cab cfg-cab" id="cfgContasCab" data-recolhe="cfgContasCorpo" aria-expanded="false" aria-controls="cfgContasCorpo">
+            <span class="invest-topo"><h2 style="margin:0">Contas bancárias</h2>
+              <span class="cfg-atual"><span id="cfgContasAtual"></span> <span class="seta" aria-hidden="true">›</span></span></span>
+          </button>
+          <div id="cfgContasCorpo" hidden style="margin-top:10px">
+            <p class="sub">Contas do Pix e do débito. A primeira é a <b>principal</b> (recebe os recebimentos sem conta marcada, as contas fixas e as faturas pagas). Para o ícone, escolha uma foto ou logo do banco da galeria.</p>
+            <div id="cfgContasLista"></div>
+            <div class="form-grid" style="margin-top:12px">
+              <div class="full"><label for="cbNome">Adicionar conta</label><input type="text" id="cbNome" maxlength="30" placeholder="ex.: Nubank, Itaú, Safra"></div>
+              <div class="full"><button type="button" class="btn full" id="cbAdd">Adicionar conta</button></div>
+            </div>
+            <input type="file" id="cbArquivo" accept="image/*" hidden>
+          </div>
+        </div>
         <div class="card" id="cfgPessoas">
           <button type="button" class="invest-cab cfg-cab" id="cfgPessoasCab" data-recolhe="cfgPessoasCorpo" aria-expanded="false" aria-controls="cfgPessoasCorpo">
             <span class="invest-topo"><h2 style="margin:0">Pessoas</h2>
@@ -1722,6 +1737,7 @@ function aplicaPerfil(p){
   if(typeof montaChipsContaReceb==='function') montaChipsContaReceb();
   if(typeof montaFiltrosPessoa==='function') montaFiltrosPessoa();
   if(typeof montaCfgPessoas==='function') montaCfgPessoas();
+  if(typeof montaCfgContas==='function') montaCfgContas();
   if(typeof montaCartaoNovoTitular==='function') montaCartaoNovoTitular();
 }
 const CORES_CONSOLIDADO = { fixo:'#2a78d6', variavel:'#eb6834', cartao:'#8a63d2' };
@@ -2015,6 +2031,64 @@ preencheFiltroDashCat();
 document.getElementById('dashFiltroCat').onchange = ()=>{ filtroDashCat = document.getElementById('dashFiltroCat').value; desenhaTudo(); };
 
 // filtros "por pessoa": só aparecem no modo casal
+// ---------- Configurações → Contas bancárias ----------
+let cbIconeDe = null;   // nome da conta que está escolhendo ícone
+async function cbSalva(contas){
+  const r = await chamaApi('/api/gastos?recurso=perfil', {method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({contas})});
+  if(!r.ok) throw await erroApi(r, 'falha ao salvar');
+  aplicaPerfil({...perfil, ...(await r.json())}); desenhaTudo();
+}
+function montaCfgContas(){
+  const lista = document.getElementById('cfgContasLista'); if(!lista) return;
+  const cs = perfil.contas || [];
+  document.getElementById('cfgContasAtual').textContent = cs.length + (cs.length===1 ? ' conta' : ' contas');
+  lista.innerHTML = cs.map((c,i)=>`<div class="linha" style="align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+      ${logoConta(c.nome)}
+      <div style="flex:1;min-width:0"><b>${esc(c.nome)}</b>${i===0?' <span class="tag t-emdia">principal</span>':''}</div>
+      <button type="button" class="btn-texto" data-cbicone="${esc(c.nome)}">Ícone</button>
+      ${i>0?`<button type="button" class="btn-texto" data-cbprinc="${esc(c.nome)}">Tornar principal</button>`:''}
+      <button type="button" class="btn-texto" data-cbrem="${esc(c.nome)}" aria-label="Remover ${esc(c.nome)}">Remover</button>
+    </div>`).join('') || '<div class="vazio">Nenhuma conta cadastrada.</div>';
+  lista.querySelectorAll('[data-cbicone]').forEach(b=> b.onclick = ()=>{ cbIconeDe = b.dataset.cbicone; const f = document.getElementById('cbArquivo'); f.value = ''; f.click(); });
+  lista.querySelectorAll('[data-cbprinc]').forEach(b=> b.onclick = async ()=>{
+    const nome = b.dataset.cbprinc;
+    try{ await cbSalva([cs.find(c=>c.nome===nome), ...cs.filter(c=>c.nome!==nome)]); toast(nome + ' agora é a conta principal'); }
+    catch(e){ toast('✕ ' + ((e && e.message) || 'Sem conexão')); }
+  });
+  lista.querySelectorAll('[data-cbrem]').forEach(b=> b.onclick = async ()=>{
+    const nome = b.dataset.cbrem;
+    if(cs.length<=1){ toast('Precisa ficar ao menos uma conta'); return; }
+    const usada = itens.some(i=>i.conta===nome || i.contaDestino===nome);
+    if(!confirm(`Remover "${nome}"?` + (usada ? '\n\nOs lançamentos antigos continuam no histórico, mas a conta some das opções.' : ''))) return;
+    try{ await cbSalva(cs.filter(c=>c.nome!==nome)); toast('Conta removida'); }
+    catch(e){ toast('✕ ' + ((e && e.message) || 'Sem conexão')); }
+  });
+}
+document.getElementById('cbAdd').onclick = async ()=>{
+  const nome = document.getElementById('cbNome').value.trim().slice(0,30);
+  if(!nome){ toast('Digite o nome da conta'); return; }
+  const cs = perfil.contas || [];
+  if(cs.some(c=>c.nome.toLowerCase()===nome.toLowerCase())){ toast('Essa conta já existe'); return; }
+  try{ await cbSalva([...cs, {nome}]); document.getElementById('cbNome').value = ''; toast('Conta adicionada'); }
+  catch(e){ toast('✕ ' + ((e && e.message) || 'Sem conexão')); }
+};
+// foto do ícone: reduz para 80x80 (recorte central) e guarda junto da conta
+document.getElementById('cbArquivo').onchange = e=>{
+  const arq = e.target.files && e.target.files[0]; if(!arq || !cbIconeDe) return;
+  const nome = cbIconeDe, url = URL.createObjectURL(arq), img = new Image();
+  img.onload = async ()=>{
+    const t = 80, cv = document.createElement('canvas'); cv.width = cv.height = t;
+    const lado = Math.min(img.width, img.height), sx = (img.width-lado)/2, sy = (img.height-lado)/2;
+    cv.getContext('2d').drawImage(img, sx, sy, lado, lado, 0, 0, t, t);
+    URL.revokeObjectURL(url);
+    const dados = cv.toDataURL('image/png');
+    try{ await cbSalva((perfil.contas||[]).map(c=> c.nome===nome ? {...c, icone: dados} : c)); toast('Ícone atualizado'); }
+    catch(err){ toast('✕ ' + ((err && err.message) || 'Sem conexão')); }
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(url); toast('Não consegui abrir essa imagem'); };
+  img.src = url;
+};
+
 // ---------- Configurações → Diagnóstico ----------
 const VERSAO_APP = '1.3.0';
 let diagTexto = '';
@@ -2609,7 +2683,7 @@ function pagamentosDesde(c, base, conta){
 // Recebimentos sem conta marcada contam como da conta principal.
 // Ícones dos bancos: selo redondo na cor do banco com a marca escrita (parecido com o logo, sem usar o arquivo oficial).
 // Para usar o logo oficial de um banco, ponha o arquivo em /logos/<chave>.png e liste a chave em LOGOS_IMG.
-const LOGOS_IMG = new Set([]);   // ex.: new Set(['nubank','c6'])
+const LOGOS_IMG = new Set(['safra']);   // chaves de BANCOS com arquivo em /logos/<chave>.png
 const BANCOS = [
   {k:'nubank',  re:/nubank|\bnu\b/,            cor:'#820AD1', fg:'#fff',    t:'nu',    card:'#820AD1'},
   {k:'c6',      re:/\bc6\b/,                    cor:'#1D1D1F', fg:'#fff',    t:'C6',    card:'#242426'},
@@ -2621,7 +2695,7 @@ const BANCOS = [
   {k:'bb',      re:/banco do brasil|\bbb\b/,    cor:'#FCE300', fg:'#0038A8', t:'BB',    card:'#0A3A9B'},
   {k:'mercadopago',re:/mercado ?pago/,          cor:'#009EE3', fg:'#fff',    t:'MP',    card:'#0A8CCB'},
   {k:'picpay',  re:/picpay/,                    cor:'#21C25E', fg:'#fff',    t:'pp',    card:'#1AA14D'},
-  {k:'safra',   re:/safra/,                    cor:'#002F6C', fg:'#fff',    t:'S',     card:'#00285A'},
+  {k:'safra',   re:/safra/,                    cor:'#141B2B', fg:'#fff',    t:'S',     card:'#141B2B'},
   {k:'xp',      re:/\bxp\b/,                    cor:'#0B0B0B', fg:'#FFD400', t:'XP',    card:'#1A1A1A'},
   {k:'btg',     re:/\bbtg\b/,                   cor:'#001E62', fg:'#fff',    t:'BTG',   card:'#001E62'},
   {k:'sicoob',  re:/sicoob/,                    cor:'#003641', fg:'#7DB61C', t:'S',     card:'#003641'},
@@ -2642,7 +2716,10 @@ function corDaConta(nome){
 function logoConta(nome){
   const bco = bancoDe(nome);
   const txt = bco ? bco.t : iniciaisDe(nome);
-  const img = bco && LOGOS_IMG.has(bco.k) ? `<img src="/logos/${bco.k}.png" alt="" onerror="this.remove()">` : '';
+  // 1º a foto escolhida pelo usuário (Configurações → Contas bancárias), 2º o arquivo em /logos, 3º o selo colorido
+  const meu = ((perfil.contas||[]).find(x=>x.nome===nome) || {}).icone;
+  const img = meu ? `<img src="${meu}" alt="">`
+    : bco && LOGOS_IMG.has(bco.k) ? `<img src="/logos/${bco.k}.png" alt="" onerror="this.remove()">` : '';
   return `<span class="logo-banco"><span class="logo-ini${txt.length>2?' m':''}" style="background:${corDaConta(nome)};color:${bco?bco.fg:'#fff'}">${esc(txt)}${img}</span></span>`;
 }
 function baseConta(nome){
