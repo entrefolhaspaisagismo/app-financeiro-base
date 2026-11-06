@@ -3,6 +3,18 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.4.1 — logos dos bancos
+- Logos de 11 bancos no lugar do selo colorido: Nubank, C6, Itaú, Inter, Bradesco, Santander, Caixa, Banco do Brasil,
+  PicPay, XP e BTG Pactual (PNG 96x96 em `logos/`, gerados a partir de SVG do Wikimedia Commons, com fundo na cor do banco).
+- Origem (Wikimedia Commons): Nubank = `Nubank logo 2021.svg`; C6 = `Logo C6 Bank.svg`; Itaú = `Itaú Unibanco logo 2023.svg`;
+  Inter = `Logo do banco Inter (2023).svg`; Bradesco = `Banco Bradesco logo.svg` (só o símbolo);
+  Santander = `Banco santander logo.svg` (só a chama); Caixa = `Caixa Econômica Federal logo 1997.svg`;
+  Banco do Brasil = `Logotipo do Banco do Brasil (símbolo).svg`; PicPay = `Logotipo do PicPay.svg`;
+  XP = `Logotipo da XP Investimentos.svg`; BTG = `Btg-logo-blue.svg` (só o "btg").
+- Mercado Pago ficou sem logo (não há arquivo no Commons): continua o selo colorido.
+- Os logos são marcas dos respectivos bancos, usadas só para identificar a conta. Quem preferir pode trocar o ícone de
+  qualquer conta por uma foto em Configurações → Contas bancárias.
+
 ## v1.4.0
 - **Configurações → Contas bancárias:** adicionar e remover contas, tornar uma conta a principal e trocar o ícone de
   qualquer banco por uma foto da galeria (tudo pelo app, sem mexer em código).
