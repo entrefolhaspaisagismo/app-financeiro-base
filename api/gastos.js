@@ -476,7 +476,12 @@ module.exports = async function handler(req, res) {
         if (Array.isArray(body.contas)) {
           const vistos = new Set();
           atual.contas = body.contas
-            .map((c) => ({ nome: String((c && c.nome) || c || "").trim().slice(0, 30), cor: String((c && c.cor) || "").slice(0, 9) }))
+            .map((c) => ({
+              nome: String((c && c.nome) || c || "").trim().slice(0, 30),
+              cor: String((c && c.cor) || "").slice(0, 9),
+              // ícone: foto pequena (data URL png/jpeg/webp) escolhida em Configurações → Contas bancárias
+              icone: (c && typeof c.icone === "string" && c.icone.length <= 30000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(c.icone)) ? c.icone : "",
+            }))
             .filter((c) => c.nome && !vistos.has(c.nome.toLowerCase()) && vistos.add(c.nome.toLowerCase()))
             .slice(0, 12);
         }

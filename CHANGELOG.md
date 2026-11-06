@@ -3,6 +3,11 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.4.0
+- **Configurações → Contas bancárias:** adicionar e remover contas, tornar uma conta a principal e trocar o ícone de
+  qualquer banco por uma foto da galeria (tudo pelo app, sem mexer em código).
+- Logo do Safra incluído.
+
 ## v1.3.0
 - **Configurações → Diagnóstico:** mostra se avisos e atalho do Apple Pay estão configurados e o histórico das últimas
   compras do atalho com o motivo de cada falha, com botão "Copiar relatório" (sem senhas nem chaves).
