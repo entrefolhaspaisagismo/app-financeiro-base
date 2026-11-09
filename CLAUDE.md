@@ -41,6 +41,8 @@ explique o que fazer em cada site e confira o resultado antes de seguir.
   conta marcada, contas fixas e faturas pagas.
 - Contas bancárias (nome, ícone em foto, qual é a principal) são editadas em Configurações → Contas bancárias (`perfil.contas`).
   O ícone escolhido pelo usuário vence o selo colorido de `BANCOS`.
+- A fatura paga de um cartão desconta da conta `contaDebito` do cartão (`contaDebitoDoCartao` em `index.html`; sem escolha, a
+  conta principal; '' = fora dos saldos). Saldo da conta = saldo-base + lançamentos − contas fixas pagas − faturas pagas.
 - Cartões de crédito são cadastrados em Cartões → "+ Novo cartão" (nome, melhor dia, vencimento, limite, titular).
 - Ícones dos bancos: `BANCOS` em `index.html` (selo na cor do banco). Para usar o logo oficial, ponha o arquivo em
   `/logos/<chave>.png` e liste a chave em `LOGOS_IMG`.
