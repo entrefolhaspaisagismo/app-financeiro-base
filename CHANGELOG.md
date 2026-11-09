@@ -3,6 +3,12 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.7.0
+- **Início em um clique:** botão "Deploy com Vercel" no README (cópia privada + projeto + banco Upstash), com a rotina de
+  atualização já incluída na cópia (branch `modelo`).
+- O servidor aceita também as variáveis `KV_REST_API_URL` e `KV_REST_API_TOKEN` (criadas pela integração Upstash da Vercel).
+- A rotina de atualização aceita cópias sem histórico em comum com o base.
+
 ## v1.6.1
 - Arquivo `LICENSE` (licença de uso privado: uso pessoal e não comercial, sem redistribuição ou venda).
 

@@ -55,6 +55,16 @@ explique o que fazer em cada site e confira o resultado antes de seguir.
 Peça ao dono o que ele quer mudar (cores, categorias, telas, relatórios). Mudanças pessoais devem ir em
 arquivos/trechos pequenos e bem localizados, para facilitar receber as atualizações do repositório base.
 
+## Começar pelo botão "Deploy com Vercel" (README)
+O botão do README clona a branch **`modelo`** deste repositório para um repositório privado novo na conta do usuário, cria o projeto
+na Vercel e (pela integração Upstash) o banco, cujas variáveis vêm como `KV_REST_API_URL` e `KV_REST_API_TOKEN` (o servidor
+aceita esses nomes e os `UPSTASH_REDIS_REST_*`). A cópia **não tem histórico em comum** com o base; por isso a rotina de
+atualização usa `--allow-unrelated-histories`.
+
+**Manutenção (quem publica o base):** a `modelo` é igual à `estavel` **mais** o arquivo `.github/workflows/sync-base.yml` (a rotina
+que vem pronta na cópia). A `estavel` **nunca** contém arquivos em `.github/workflows` (usuários antigos não conseguiriam
+receber a atualização). Ao publicar uma versão: atualize a `estavel` e depois `git checkout modelo && git merge estavel`.
+
 ## Receber atualizações do repositório base
 O repositório original é o "base" (guarde o endereço que o dono te passar). Para atualizar:
 ```bash

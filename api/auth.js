@@ -8,7 +8,7 @@ const curto = (v, max) => String(v || "").slice(0, max);
 const pessoaValida = (v) => (/^[A-Za-z0-9_-]{1,20}$/.test(String(v || "")) ? String(v) : "");
 
 module.exports = async function handler(req, res) {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (!(process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) || !(process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)) {
     return res.status(500).json({ erro: "UPSTASH_REDIS_REST_URL ou UPSTASH_REDIS_REST_TOKEN não configurados" });
   }
   const acao = (req.query && req.query.acao) || "estado";
