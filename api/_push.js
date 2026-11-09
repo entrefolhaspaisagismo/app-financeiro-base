@@ -81,11 +81,13 @@ async function avisarCompra(item) {
       : 'os aparelhos desta pessoa estão no modo "Lembrete do dia" (troque para "A cada compra" ou "Os dois")';
     return { enviados: 0, falhas: 0, motivo };
   }
-  const payload = {
-    titulo: "Nova compra no cartão",
-    corpo: `R$ ${brl(item.valor)} em ${item.estabelecimento || "compra"} — toque para confirmar`,
-    url: urlPendentes(), tag: "compra",
-  };
+  const pix = item.forma === "PIX";
+  const payload = pix
+    ? { titulo: item.tipo === "ENTRADA" ? "Pix recebido" : "Pix enviado",
+        corpo: `R$ ${brl(item.valor)} ${item.tipo === "ENTRADA" ? "de" : "para"} ${item.estabelecimento || "—"} — toque para confirmar`,
+        url: urlPendentes(), tag: "pix" }
+    : { titulo: "Nova compra no cartão", corpo: `R$ ${brl(item.valor)} em ${item.estabelecimento || "compra"} — toque para confirmar`,
+        url: urlPendentes(), tag: "compra" };
   const resultados = await Promise.all(alvos.map((s) => enviar(s, payload)));
   const mortos = new Set(alvos.filter((_, i) => resultados[i].gone).map((s) => s.endpoint));
   if (mortos.size) await salvarSubs(subs.filter((s) => !mortos.has(s.endpoint)));

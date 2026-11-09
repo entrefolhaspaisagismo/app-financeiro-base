@@ -221,6 +221,128 @@ function novoPendente(dados, b) {
   };
 }
 
+// ---- comprovante de Pix (texto lido do print/PDF pelo Atalhos): C6 e Nubank ----
+const MESES_ABREV = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
+function dataDoComprovante(plano) {
+  const achados = [];
+  let m;
+  const reNum = /(\d{2})\/(\d{2})\/(\d{4})/g;
+  while ((m = reNum.exec(plano))) achados.push({ i: m.index, d: `${m[3]}-${m[2]}-${m[1]}` });
+  const reTxt = /(\d{1,2})\s+(?:de\s+)?([a-zçãé]{3,})\.?\s+(?:de\s+)?(\d{4})/gi;
+  while ((m = reTxt.exec(plano))) {
+    const mes = MESES_ABREV[semAcento(m[2]).slice(0, 3)] || ({ marco: 3 }[semAcento(m[2])]);
+    if (mes) achados.push({ i: m.index, d: `${m[3]}-${pad2(mes)}-${pad2(Number(m[1]))}` });
+  }
+  achados.sort((a, b) => a.i - b.i);
+  return achados.length ? achados[0].d : "";
+}
+function nomeLimpo(n) {
+  // tira iniciais soltas do "avatar" (ex.: "W WILLIAM ROSA…") e espaços sobrando
+  return String(n || "").replace(/^(?:[A-ZÀ-Ú]{1,2}\s+)+(?=[A-ZÀ-Ú]{3,})/, "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+const ehMeuNome = (nome, meuNome) => {
+  const alvo = semAcento(meuNome).split(/\s+/).filter((t) => t.length > 2);
+  const n = semAcento(nome);
+  return alvo.length > 0 && alvo.every((t) => n.includes(t));
+};
+// Nubank, texto lido do print pelo iPhone: os títulos vêm primeiro e os valores depois
+// ("Destino Nome CNPJ Instituição Tipo de conta CAIXA ECONOMICA FEDERAL 00360305000104 CAIXA ECONOMICA FEDERAL Conta corrente Origem …").
+const TITULOS_NU = /^(?:Nome|CNPJ|CPF|Institui[cç][aã]o|Tipo de conta|Ag[eê]ncia|Conta)\s+/i;
+const PALAVRAS_BANCO = /^(?:NU|NUBANK|ITA[UÚ]|BCO|BANCO|BRADESCO|SANTANDER|INTER|C6|MERCADO|PAGSEGURO|PICPAY|NEON|ORIGINAL|SICOOB|SICREDI|BANRISUL|BTG|XP|STONE|CIELO|GETNET|ASAAS|EFI|CAIXA)$/i;
+function nomeAposTitulos(seg, cortarNoBanco) {
+  let t = String(seg || "").trim();
+  while (TITULOS_NU.test(t)) t = t.replace(TITULOS_NU, "");
+  const out = [];
+  for (const w of t.split(/\s+/)) {
+    if (/[\d]/.test(w) || /^[.•·]/.test(w)) break;           // CNPJ/CPF vêm depois do nome
+    if (cortarNoBanco && out.length && PALAVRAS_BANCO.test(w)) break; // origem: o banco vem colado depois do nome
+    out.push(w);
+  }
+  return nomeLimpo(out.join(" "));
+}
+function lerComprovantePix(texto, meuNome) {
+  const plano = String(texto || "").replace(/\s+/g, " ").trim();
+  if (!plano) return { erro: "texto do comprovante vazio" };
+  const mv = /Valor\s*R\$\s*([\d.]+,\d{2})/i.exec(plano) || /R\$\s*([\d.]+,\d{2})/.exec(plano);
+  const valor = mv ? lerValor(mv[1]) : NaN;
+  if (!(valor > 0)) return { erro: "não achei o valor no comprovante" };
+  const data = dataDoComprovante(plano) || hojeBR();
+
+  let origem = "", destino = "";
+  const nome = (re) => { const x = re.exec(plano); return x ? nomeLimpo(x[1]) : ""; };
+  if (/\bDestino\b/.test(plano) && /\bOrigem\b/.test(plano) && /Nome\s/.test(plano)) {
+    // Nubank: "Destino … Nome X … Origem … Nome Y"
+    destino = nome(/Destino[\s\S]*?Nome\s+(.+?)\s+(?:CNPJ|CPF|Institui)/);
+    origem = nome(/Origem[\s\S]*?Nome\s+(.+?)\s+(?:CNPJ|CPF|Institui)/);
+    // se o "nome" lido é só um título (CNPJ, Instituição…), o texto veio com os títulos primeiro: lê os valores depois dos títulos
+    if (TITULOS_NU.test(destino + " ") || TITULOS_NU.test(origem + " ")) {
+      const segD = /Destino\s+([\s\S]*?)\s+Origem\b/.exec(plano);
+      const segO = /Origem\s+([\s\S]*?)(?:\s+Informa[cç][oõ]es adicionais|\s+Identific|$)/.exec(plano);
+      const brutoO = segO ? segO[1] : "";
+      const brutoD = segD ? segD[1] : "";
+      destino = ehMeuNome(brutoD, meuNome) ? nomeAposTitulos(brutoD, true) : nomeAposTitulos(brutoD, false);
+      origem = ehMeuNome(brutoO, meuNome) ? nomeAposTitulos(brutoO, true) : nomeAposTitulos(brutoO, true);
+    }
+  } else {
+    // C6: nomes em maiúsculas antes de "Banco:"; "Conta de origem" (ou "Conta de destino") marca a parte do usuário
+    const nomes = [];
+    const re = /([A-ZÀ-Ú][A-ZÀ-Ú'.\- ]{2,}?)\s+Banco:/g;
+    let m;
+    while ((m = re.exec(plano))) nomes.push({ i: m.index, n: nomeLimpo(m[1]) });
+    const iOrig = plano.search(/Conta de origem/i), iDest = plano.search(/Conta de destino/i);
+    if (iOrig >= 0) {
+      origem = (nomes.find((x) => x.i > iOrig) || {}).n || "";
+      destino = (nomes.filter((x) => x.i < iOrig)[0] || {}).n || "";
+    } else if (iDest >= 0) {
+      destino = (nomes.find((x) => x.i > iDest) || {}).n || "";
+      origem = (nomes.filter((x) => x.i < iDest)[0] || {}).n || "";
+    }
+  }
+  let tipo, contraparte;
+  if (origem && ehMeuNome(origem, meuNome)) { tipo = "SAÍDA"; contraparte = destino; }
+  else if (destino && ehMeuNome(destino, meuNome)) { tipo = "ENTRADA"; contraparte = origem; }
+  else if (/recebid|recebeu/i.test(plano)) { tipo = "ENTRADA"; contraparte = origem || destino; }
+  else { tipo = "SAÍDA"; contraparte = destino || origem; }
+  // nome que na verdade é um título do comprovante ("CNPJ", "Nome", "Instituição"…): a ordem do texto lido veio diferente do esperado.
+  // Em vez de criar um Pendente com nome errado, devolve o texto lido pra eu acertar o leitor.
+  if (!contraparte || contraparte.length < 3 || /^(nome|cnpj|cpf|institui[cç][aã]o|origem|destino|tipo|conta|valor|banco|ag[eê]ncia)\b/i.test(contraparte)) {
+    return { erro: "não consegui ler o nome de quem pagou/recebeu — me mande um print desta tela", lido: plano.slice(0, 900) };
+  }
+
+  const mid = /ID da transa[cç][aã]o:?\s*([A-Za-z0-9]{20,})/i.exec(plano);
+  const msgId = mid ? `pix:${mid[1]}` : `pix:${data}:${valor.toFixed(2)}:${semAcento(contraparte)}`;
+  return { valor, data, tipo, contraparte, msgId };
+}
+
+function novoPendentePix(dados, b) {
+  const k = {};
+  Object.keys(b || {}).forEach((c) => { k[semAcento(c)] = b[c]; });
+  // de quem é o comprovante: o atalho manda o nome ("quem"); sem nome ou sem casar, é da primeira pessoa
+  const pessoas = (dados.perfil && dados.perfil.pessoas) || [];
+  const pessoa = pessoas.find((p) => semAcento(p.nome) === semAcento(k.quem)) || pessoas[0] || { id: "EU", nome: "" };
+  // "meuNome" (opcional) é o nome como aparece no banco; sem ele vale o nome cadastrado em Configurações → Pessoas
+  const r = lerComprovantePix(k.texto, String(k.meunome || pessoa.nome || ""));
+  if (r.erro) return { erro: r.erro, lido: r.lido };
+  // conta do Pix: o atalho pode mandar o nome da conta ("conta"); sem isso vale a conta principal
+  const contas = (dados.perfil && dados.perfil.contas) || [];
+  const contaTxt = semAcento(k.conta);
+  const casada = contas.find((c) => { const n = semAcento(c.nome); return n.length >= 2 && contaTxt.includes(n); });
+  const conta = (casada && casada.nome) || (contas[0] && contas[0].nome) || null;
+  // sugere a categoria do último lançamento do mesmo tipo com o mesmo nome
+  const ultimo = [...(dados.lancamentos || [])].reverse()
+    .find((l) => l.tipo === r.tipo && l.categoria && semAcento(l.descricao) === semAcento(r.contraparte));
+  return {
+    item: {
+      id: Date.now(), data: r.data, quem: pessoa.id, valor: r.valor, estabelecimento: r.contraparte, tipo: r.tipo, forma: "PIX", conta,
+      origem: "Comprovante Pix", msgId: r.msgId,
+      ...(ultimo ? { sugestaoCategoria: ultimo.categoria } : {}),
+    },
+  };
+}
+
+// o texto lido do comprovante pode ter CPF/CNPJ/contas: o histórico do Diagnóstico guarda só um trecho, com os números escondidos
+const mascaraTexto = (t) => String(t || "").replace(/\d{5,}/g, "•••").slice(0, 350);
+
 async function salvarTudo(dados) {
   const r = await fetch(`${UPSTASH_URL}/set/${CHAVE_REDIS}`, {
     method: "POST",
@@ -265,12 +387,30 @@ module.exports = async function handler(req, res) {
       }
       travado = await adquirirLock();
       const dados = await lerTudo();
-      const r = novoPendente(dados, body);
+      // comprovante de Pix: o atalho de Compartilhar manda o texto lido da imagem no campo "texto"
+      const ehComprovante = !!body && typeof body === "object" && Object.keys(body).some((c) => semAcento(c) === "texto");
+      const r = ehComprovante ? novoPendentePix(dados, body) : novoPendente(dados, body);
       if (r.erro) {
-        await P.registrarLog({ tipo: "atalho", resultado: "campos", detalhe: `${r.erro}. Campos recebidos: ${Object.keys(body || {}).join(", ") || "nenhum"}` });
-        return res.status(400).json({ erro: r.erro });
+        await P.registrarLog(ehComprovante
+          ? { tipo: "atalho", resultado: "comprovante-nao-leu", detalhe: `${r.erro}${r.lido ? ". Texto lido: " + mascaraTexto(r.lido) : ""}` }
+          : { tipo: "atalho", resultado: "campos", detalhe: `${r.erro}. Campos recebidos: ${Object.keys(body || {}).join(", ") || "nenhum"}` });
+        return res.status(ehComprovante ? 422 : 400).json(r.lido ? { erro: r.erro, lido: r.lido } : { erro: r.erro });
       }
       const pend = Array.isArray(dados.pendentes) ? dados.pendentes : [];
+      if (ehComprovante) {
+        const rotuloPix = r.item.tipo === "ENTRADA" ? "Pix recebido" : "Pix enviado";
+        // o mesmo comprovante compartilhado duas vezes (ou já confirmado) não duplica
+        if (pend.some((p) => p.msgId === r.item.msgId) || (dados.lancamentos || []).some((l) => l.msgId === r.item.msgId)) {
+          await P.registrarLog({ tipo: "atalho", resultado: "duplicada", detalhe: `${rotuloPix} · ${r.item.estabelecimento} · R$ ${r.item.valor}` });
+          return res.status(200).json({ ok: true, duplicado: true });
+        }
+        dados.pendentes = [...pend, r.item];
+        await salvarTudo(dados);
+        let pushPix;
+        try { pushPix = await P.avisarCompra(r.item); } catch (e) { pushPix = { enviados: 0, falhas: 0, motivo: "erro ao avisar: " + String((e && e.message) || e) }; }
+        await P.registrarLog({ tipo: "atalho", resultado: "recebida", detalhe: `${rotuloPix} · ${r.item.estabelecimento} · R$ ${r.item.valor}`, push: pushPix });
+        return res.status(200).json({ ok: true, tipo: r.item.tipo, valor: r.item.valor, nome: r.item.estabelecimento });
+      }
       // evita duplicar se o atalho disparar duas vezes seguidas
       if (pend.some((p) => p.msgId === r.item.msgId && r.item.id - p.id < 120000)) {
         await P.registrarLog({ tipo: "atalho", resultado: "duplicada", detalhe: `${r.item.estabelecimento} · R$ ${r.item.valor}` });
@@ -384,7 +524,7 @@ module.exports = async function handler(req, res) {
         const categoria = String(body.categoria || "").trim();
         if (!categoria) return res.status(400).json({ erro: "escolha a categoria" });
         // o app informa se foi crédito ou débito (o Apple Pay não diz)
-        const forma = body.forma === "Débito" || body.forma === "Crédito" ? body.forma : p.forma;
+        const forma = p.forma === "PIX" ? "PIX" : body.forma === "Débito" || body.forma === "Crédito" ? body.forma : p.forma;
         const cartaoId = body.cartaoId !== undefined ? body.cartaoId : p.cartaoId;
         const nomesContas = ((dados.perfil && dados.perfil.contas) || []).map((c) => c.nome);
         const conta = nomesContas.includes(body.conta) ? body.conta : p.conta || nomesContas[0] || null;
@@ -396,15 +536,16 @@ module.exports = async function handler(req, res) {
           data: faturaData || p.data,
           dataCompra: faturaData ? p.data : null,
           quem: p.quem,
-          tipo: "SAÍDA",
+          tipo: p.tipo === "ENTRADA" ? "ENTRADA" : "SAÍDA",
           categoria,
           descricao: String(body.descricao || p.estabelecimento).slice(0, 80),
-          forma,
+          forma: p.tipo === "ENTRADA" ? "" : forma,
           cartaoId: forma === "Crédito" ? cartaoId || null : null,
-          conta: forma === "Débito" ? conta : null,
+          conta: forma === "Débito" || forma === "PIX" ? conta : null,
           contaDestino: null,
           investimentoId: null,
           origem: p.origem || null,
+          msgId: p.msgId || null,
           valor: p.valor,
           status: "PAGO",
         };

@@ -1298,7 +1298,7 @@ aplicaVisual();
       <!-- ============ PENDENTES (Apple Pay) ============ -->
       <section class="sec" id="s-pendentes">
         <div class="card">
-          <h2>Compras avisadas pelo iPhone</h2>
+          <h2>Compras e Pix avisados pelo iPhone</h2>
           <p class="sub">Escolha a categoria e confirme para lançar. Descartar remove sem lançar.</p>
           <div id="pendLista"></div>
         </div>
@@ -1509,7 +1509,7 @@ aplicaVisual();
               <span class="cfg-atual"><span id="cfgPessoasAtual"></span> <span class="seta" aria-hidden="true">›</span></span></span>
           </button>
           <div id="cfgPessoasCorpo" hidden style="margin-top:10px">
-            <p class="sub">Use sozinho ou com mais uma pessoa (ex.: esposa). Os dados são compartilhados; cada lançamento guarda quem fez e cada um recebe os próprios avisos.</p>
+            <p class="sub">Use sozinho ou com mais uma pessoa (ex.: esposa). Os dados são compartilhados; cada lançamento guarda quem fez e cada um recebe os próprios avisos. Dica: para o Pix pelo comprovante, escreva o nome como aparece no banco.</p>
             <div class="form-grid">
               <div class="full"><label for="cpNome1">Primeira pessoa</label><input type="text" id="cpNome1" maxlength="40"></div>
               <div class="full"><label for="cpNome2">Segunda pessoa (opcional)</label><input type="text" id="cpNome2" maxlength="40" placeholder="Deixe vazio para usar sozinho"></div>
@@ -2092,7 +2092,7 @@ document.getElementById('cbArquivo').onchange = e=>{
 // ---------- Configurações → Diagnóstico ----------
 const VERSAO_APP = '1.3.0';
 let diagTexto = '';
-const DIAG_RESULTADO = { recebida:'✓ Compra recebida', duplicada:'Compra repetida (ignorada)', senha:'✕ Senha do atalho incorreta',
+const DIAG_RESULTADO = { recebida:'✓ Compra recebida', duplicada:'Compra repetida (ignorada)', senha:'✕ Senha do atalho incorreta', 'comprovante-nao-leu':'✕ Não consegui ler o comprovante Pix',
   campos:'✕ Faltaram dados na compra', 'sem-senha':'✕ Chegou sem a senha do atalho', teste:'Aviso de teste', lembrete:'Lembrete do dia' };
 function diagHora(iso){ try{ return new Date(iso).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); }catch(e){ return iso; } }
 function diagPush(p){
@@ -3038,8 +3038,22 @@ function desenhaPendentes(){
 
   const lista = document.getElementById('pendLista');
   if(!lista) return;
-  if(!pendentes.length){ lista.innerHTML = '<div class="vazio">Nenhuma compra pendente no momento.</div>'; return; }
+  if(!pendentes.length){ lista.innerHTML = '<div class="vazio">Nada pendente no momento.</div>'; return; }
   lista.innerHTML = pendentes.map(p=>{
+    if(p.forma==='PIX'){
+      const rotulo = p.tipo==='ENTRADA' ? 'Pix recebido' : 'Pix enviado';
+      return `<div class="linha" style="flex-wrap:wrap;gap:8px;align-items:center">
+      <div class="info" style="flex-basis:100%">
+        <div class="tit">${esc(p.estabelecimento)}</div>
+        <div class="meta">${esc(p.data.split('-').reverse().join('/'))} · ${rotulo}${ehCasal() ? ' · ' + esc(NOMES_PESSOA[p.quem]||p.quem) : ''}</div>
+      </div>
+      <select data-pend-conta="${p.id}" style="flex:1 1 140px;width:auto;min-width:0" aria-label="Conta do Pix"></select>
+      <select data-pend-cat="${p.id}" style="flex:1;min-width:180px"></select>
+      <div class="num ${p.tipo==='ENTRADA'?'pos':''}">${p.tipo==='ENTRADA'?'+ ':''}R$ ${brl(p.valor)}</div>
+      <button type="button" class="btn" data-pend-ok="${p.id}" style="width:auto;padding:8px 14px">Confirmar</button>
+      <button type="button" class="btn secundario" data-pend-no="${p.id}" style="width:auto;padding:8px 14px">Descartar</button>
+    </div>`;
+    }
     const onde = p.forma==='Débito' ? `Débito · ${esc(p.conta||contaPrincipal())}` : `Crédito · ${esc(p.cartaoNome||'cartão')}`;
     return `<div class="linha" style="flex-wrap:wrap;gap:8px;align-items:center">
       <div class="info" style="flex-basis:100%">
@@ -3060,9 +3074,20 @@ function desenhaPendentes(){
   }).join('');
   lista.querySelectorAll('[data-pend-cat]').forEach(sel=>{
     const p = pendentes.find(x=>x.id===Number(sel.dataset.pendCat));
-    opcoesCategorias(sel);
-    sel.insertBefore(new Option('Escolha a categoria…',''), sel.firstChild);
-    sel.value = p && p.sugestaoCategoria && todasCategorias().includes(p.sugestaoCategoria) ? p.sugestaoCategoria : '';
+    const entrada = p && p.tipo==='ENTRADA';
+    if(entrada){ sel.innerHTML = CATEGORIAS_ENTRADA.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join(''); }
+    else{ opcoesCategorias(sel); }
+    sel.insertBefore(new Option(entrada ? 'Escolha a origem…' : 'Escolha a categoria…',''), sel.firstChild);
+    const sug = p && p.sugestaoCategoria;
+    sel.value = sug && (entrada ? CATEGORIAS_ENTRADA.includes(sug) : todasCategorias().includes(sug)) ? sug : '';
+  });
+  // Pix: só escolher a conta onde o dinheiro saiu ou entrou
+  lista.querySelectorAll('[data-pend-conta]').forEach(selConta=>{
+    if(selConta.options.length) return;
+    const p = pendentes.find(x=>x.id===Number(selConta.dataset.pendConta));
+    if(!p || p.forma!=='PIX') return;
+    selConta.innerHTML = CONTAS_PIX_DEBITO.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    selConta.value = p.conta || contaPrincipal();
   });
   // o iPhone não diz se foi crédito ou débito: quem escolhe é você
   lista.querySelectorAll('[data-pend-forma]').forEach(selF=>{
@@ -3083,15 +3108,16 @@ function desenhaPendentes(){
     const id = Number(b.dataset.pendOk);
     const categoria = lista.querySelector(`[data-pend-cat="${id}"]`).value;
     if(!categoria){ toast('Escolha a categoria antes de confirmar'); return; }
-    const forma = lista.querySelector(`[data-pend-forma="${id}"]`).value;
-    const cartaoId = Number(lista.querySelector(`[data-pend-cartao="${id}"]`).value) || null;
+    const selForma = lista.querySelector(`[data-pend-forma="${id}"]`), selCartao = lista.querySelector(`[data-pend-cartao="${id}"]`);
+    const forma = selForma ? selForma.value : 'PIX';
+    const cartaoId = selCartao ? (Number(selCartao.value) || null) : null;
     const conta = lista.querySelector(`[data-pend-conta="${id}"]`).value;
     if(forma==='Crédito' && !cartaoId){ toast('Cadastre um cartão antes de lançar no crédito'); return; }
     b.disabled = true;
     try{
       const resp = await Api.atualizar('pendentes', {id, categoria, forma, cartaoId, conta});
       itens.push(resp.item); pendentes = pendentes.filter(x=>x.id!==id);
-      marcaOffline(false); desenhaTudo(); toast('Compra lançada');
+      marcaOffline(false); desenhaTudo(); toast('Lançamento confirmado');
     }catch(e){ b.disabled = false; marcaOffline(true, e && e.message); toast('Sem conexão — não consegui lançar'); }
   });
   lista.querySelectorAll('[data-pend-no]').forEach(b=> b.onclick = async ()=>{

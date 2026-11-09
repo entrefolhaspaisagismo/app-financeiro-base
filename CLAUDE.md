@@ -70,6 +70,13 @@ Passo a passo em `exemplos/atalho-apple-pay.md`. As chaves dos avisos são gerad
 (nada é enviado a lugar nenhum); a chave privada vai só para a Vercel (`VAPID_PRIVATE_KEY`). Nunca peça nem cole
 chaves, tokens ou senhas na conversa.
 
+## Pix pelo comprovante (opcional)
+Guia em `exemplos/pix-comprovante.md`. O atalho de Compartilhar do iPhone lê o texto do comprovante e o manda no campo
+`texto` para o mesmo endpoint do Apple Pay (`/api/gastos?recurso=pendentes`, cabeçalho `x-atalho`). O servidor
+(`lerComprovantePix` em `api/gastos.js`, portado do app Mars) entende comprovantes do C6 e do Nubank e cria um pendente
+`forma: "PIX"` com `tipo` ENTRADA ou SAÍDA. Para outro banco, peça ao dono o relatório do Diagnóstico (traz um trecho do
+texto lido, com os números escondidos) e ajuste o leitor.
+
 ## Diagnóstico de avisos e do Apple Pay
 Se "a compra não gerou aviso", peça ao dono: **Configurações → Diagnóstico → Copiar relatório** e colar na conversa.
 O relatório mostra o que está configurado e o resultado das últimas compras. Como ler:

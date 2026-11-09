@@ -3,6 +3,12 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.5.0
+- **Pix pelo comprovante:** o atalho de Compartilhar do iPhone envia o comprovante (C6 ou Nubank) e o Pix entra em Pendentes
+  como entrada ou saída, com valor, data e nome; reenvio não duplica; aviso no celular próprio para Pix. Guia em
+  `exemplos/pix-comprovante.md`. Leitor portado do app Mars.
+- Pendentes mostra Pix de entrada (categoria = origem) e de saída (categoria + conta).
+
 ## v1.4.1 — logos dos bancos
 - Logos de 12 bancos no lugar do selo colorido: Nubank, C6, Itaú, Inter, Bradesco, Santander, Caixa, Banco do Brasil,
   PicPay, XP, BTG Pactual e Mercado Pago (PNG 96x96 em `logos/`, gerados a partir de SVG do Wikimedia Commons, com fundo na cor do banco).
