@@ -1,0 +1,21 @@
+LICENÇA DE USO PRIVADO — Controle Financeiro (app base)
+
+Copyright (c) 2026 Entre Folhas Paisagismo. Todos os direitos reservados.
+
+Este software é disponibilizado para uso pessoal e não comercial, por pessoas autorizadas pelo titular.
+
+É PERMITIDO:
+  - usar o app para a própria vida financeira;
+  - copiar este repositório para a própria conta (fork ou cópia) e modificá-lo para uso próprio;
+  - receber as atualizações publicadas neste repositório base.
+
+NÃO É PERMITIDO, sem autorização por escrito do titular:
+  - vender, alugar, sublicenciar ou oferecer o app, ou versões modificadas dele, como produto ou serviço a terceiros;
+  - redistribuir publicamente o código ou versões modificadas;
+  - remover este aviso de direitos autorais.
+
+Nomes e logos de bancos pertencem aos respectivos titulares e são usados apenas para identificar contas.
+
+O software é fornecido "como está", sem garantias de qualquer tipo. O titular não se responsabiliza por perda de dados
+nem por decisões financeiras tomadas com o uso do app. Os dados financeiros de cada usuário ficam no banco de dados e na
+hospedagem da própria conta dele.
