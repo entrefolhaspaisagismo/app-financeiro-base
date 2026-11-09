@@ -1,0 +1,44 @@
+# Sincronização automática com o repositório base.
+# COMO USAR: no repositório do USUÁRIO, crie o arquivo  .github/workflows/sync-base.yml  com este conteúdo
+# (GitHub → Add file → Create new file). Depois: aba Actions → habilitar → "Sincronizar com o base" → Run workflow.
+#
+# Roda no repositório do USUÁRIO, uma vez por dia: puxa a branch "estavel" do base e
+# publica no main dele; a Vercel republica sozinha. Se houver conflito com mudanças pessoais, para e
+# o GitHub avisa por e-mail (a execução aparece como falha em Actions) — nada é sobrescrito.
+#
+# Para ligar: no repositório dele, aba Actions → "Enable workflows" (cópias vêm com as rotinas desligadas).
+# Para forçar agora: Actions → "Sincronizar com o base" → Run workflow.
+name: Sincronizar com o base
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # todo dia, 06:17 no horário de Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Puxar a branch estavel do base
+        run: |
+          # assina como o dono do repositório: o plano gratuito da Vercel só publica commits da própria conta
+          git config user.name "${{ github.repository_owner }}"
+          git config user.email "${{ github.repository_owner }}@users.noreply.github.com"
+          git remote add base https://github.com/entrefolhaspaisagismo/app-financeiro-base.git
+          git fetch base estavel
+          if git merge-base --is-ancestor base/estavel HEAD; then
+            echo "Já está atualizado."
+            exit 0
+          fi
+          if ! git merge --no-ff --no-edit --allow-unrelated-histories base/estavel; then
+            git merge --abort || true
+            echo "::error::Conflito com mudanças pessoais. Peça ao Claude para resolver o merge (veja CLAUDE.md)."
+            exit 1
+          fi
+          git push origin HEAD
