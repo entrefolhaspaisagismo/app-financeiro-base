@@ -7,8 +7,9 @@ const crypto = require("crypto");
 const VERSAO = "1.3.0";
 const { liberado } = require("./_seguranca");
 
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// aceita os nomes do Upstash e os que a integração do Upstash na Vercel cria (KV_REST_API_*)
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 // Prefixo das chaves no Redis. Mude APP_PREFIXO só se for dividir o mesmo banco com outro app.
 const PREFIXO = process.env.APP_PREFIXO || "financeiro";
 const CHAVE_REDIS = `${PREFIXO}-dados`;
@@ -357,7 +358,7 @@ async function salvarTudo(dados) {
 
 module.exports = async function handler(req, res) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-    return res.status(500).json({ erro: "UPSTASH_REDIS_REST_URL ou UPSTASH_REDIS_REST_TOKEN não configurados" });
+    return res.status(500).json({ erro: "banco de dados não configurado (UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN)" });
   }
 
   const recurso = req.query.recurso || "lancamentos";

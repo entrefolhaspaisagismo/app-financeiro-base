@@ -36,7 +36,7 @@ jobs:
             echo "Já está atualizado."
             exit 0
           fi
-          if ! git merge --no-ff --no-edit base/estavel; then
+          if ! git merge --no-ff --no-edit --allow-unrelated-histories base/estavel; then
             git merge --abort || true
             echo "::error::Conflito com mudanças pessoais. Peça ao Claude para resolver o merge (veja CLAUDE.md)."
             exit 1

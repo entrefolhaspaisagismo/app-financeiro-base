@@ -16,8 +16,9 @@
 
 const crypto = require("crypto");
 
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// aceita os nomes do Upstash e os que a integração do Upstash na Vercel cria (KV_REST_API_*)
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const PREFIXO = process.env.APP_PREFIXO || "financeiro";
 const CHAVE_AUTH = `${PREFIXO}-auth`;
 const PREFIXO_DESAFIO = `${PREFIXO}-desafio-`;
