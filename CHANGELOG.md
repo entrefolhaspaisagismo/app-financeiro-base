@@ -3,6 +3,12 @@
 Cada versão é uma etiqueta (tag) do Git. Você só atualiza se quiser.
 Versões marcadas com **(recomendada)** trazem correção de segurança ou de dados.
 
+## v1.6.0
+- **Cartões:** cada cartão passa a ter "Pagamento sai da conta": a fatura paga desconta da conta escolhida (ou de
+  nenhuma, "Outra (fora dos saldos)"). Antes só havia a conta principal ou "outra conta".
+- **Saldo das contas:** nova lista "Como esse saldo foi calculado" (lançamentos, contas fixas e faturas pagas, linha a linha).
+- Correção: o saldo "antes do dia" das contas que não são a principal agora também considera contas fixas e faturas.
+
 ## v1.5.0
 - **Pix pelo comprovante:** o atalho de Compartilhar do iPhone envia o comprovante (C6 ou Nubank) e o Pix entra em Pendentes
   como entrada ou saída, com valor, data e nome; reenvio não duplica; aviso no celular próprio para Pix. Guia em
